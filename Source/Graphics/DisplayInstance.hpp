@@ -9,6 +9,7 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
 #include <string>
+#include "Source/Input/Input.hpp"
 
 class DisplayInstance {
 	public:
@@ -58,6 +59,10 @@ class DisplayInstance {
 	
 
 	private:
+		static void windowKeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        static void windowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+        static void windowMouseScrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+        static void windowMouseMoveCallback(GLFWwindow* window, double xpos, double ypos);
 		static void GLFWframebufferResizeCallback(GLFWwindow *window, int width, int height);
 };
 

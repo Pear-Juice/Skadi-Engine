@@ -15,6 +15,11 @@ void DisplayInstance::initDisplay(VkInstance &instance, uint32_t width, uint32_t
 	window = createWindow(width, height, title, GLFWframebufferResizeCallback);
 	surface = createSurface(instance, window);
 	pickPhysicalDevice(instance, surface);
+
+	glfwSetKeyCallback(window, windowKeyCallback);
+	glfwSetMouseButtonCallback(window, windowMouseButtonCallback);
+	glfwSetScrollCallback(window, windowMouseScrollCallback);
+	glfwSetCursorPosCallback(window, windowMouseMoveCallback);
 }
 
 GLFWwindow* DisplayInstance::createWindow(uint32_t width, uint32_t height, std::string title, GLFWframebuffersizefun framebufferResizeCallback) {
@@ -33,7 +38,7 @@ GLFWwindow* DisplayInstance::createWindow(uint32_t width, uint32_t height, std::
 }
 
 void DisplayInstance::GLFWframebufferResizeCallback(GLFWwindow *window, int width, int height) {
-	auto app = reinterpret_cast<DisplayInstance*>(glfwGetWindowUserPointer(window));	
+	auto app = static_cast<DisplayInstance*>(glfwGetWindowUserPointer(window));
 	
 	app->windowWidth = width;
 	app->windowHeight = height;
@@ -187,6 +192,30 @@ DisplayInstance::QueueFamilyIndecies DisplayInstance::findQueueFamilies(VkPhysic
 	return indecies;
 }
 
+void DisplayInstance::windowKeyCallback(GLFWwindow* window, int keyCode, int scancode, int pressed, int mods) {
+    auto inputKey = static_cast<Input::Key>(keyCode);
+	auto inputPressState = static_cast<Input::PressState>(pressed);
+    auto inputMod = static_cast<Input::Mod>(mods);
+
+	Input::keyCallback(inputKey, inputPressState, inputMod);
+}
+
+void DisplayInstance::windowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    // std::cout << Input::keyToString(static_cast<Input::Key>(button)) << ": " << action << " mods: " << Input::modToString(static_cast<Input::Mod>(mods)) <<"\n";
+	auto inputMouseButton = static_cast<Input::Mouse>(button);
+	auto inputPressState = static_cast<Input::PressState>(action);
+    auto inputMod = static_cast<Input::Mod>(mods);
+
+	Input::mouseClickCallback(inputMouseButton, inputPressState, inputMod);
+}
+
+void DisplayInstance::windowMouseMoveCallback(GLFWwindow *window, double xpos, double ypos) {
+	Input::mouseMoveCallback(xpos, ypos);
+}
+
+void DisplayInstance::windowMouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
+	Input::mouseScrollCallback(xoffset, yoffset);
+}
 
 void DisplayInstance::cleanup(VkInstance &instance) {
 	glfwDestroyWindow(window);

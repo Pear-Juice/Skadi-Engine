@@ -9,13 +9,12 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include <mutex>
-#include <glm/gtx/string_cast.hpp>
 
 ResourceManager::ResourceManager(const VulkanInstance &vulkanInstance, const DisplayInstance &displayInstance) : vulkanInstance(vulkanInstance), displayInstance(displayInstance), device(vulkanInstance.device) {}
 
 std::vector<VkDescriptorSet> ResourceManager::createUBODescriptorSets(VkDescriptorPool descriptorPool, VkDescriptorSetLayout descriptorSetLayout, const std::vector<VkBuffer>& uniformBuffers, const uint32_t frameCount) {
 	std::vector<VkDescriptorSet> descriptorSets;
-	const std::vector<VkDescriptorSetLayout> layouts(frameCount, descriptorSetLayout);
+	const std::vector layouts(frameCount, descriptorSetLayout);
 
 	VkDescriptorSetAllocateInfo allocInfo{};
 	allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

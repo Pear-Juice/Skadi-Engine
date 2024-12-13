@@ -12,10 +12,10 @@
 #include <vector>
 #include <Dependancies/uuid.h>
 
-
-#include "../Resources/Texture.hpp"
-#include "../Resources/Model.hpp"
-#include "../Resources/Material.hpp"
+#include "Source/Input/Input.hpp"
+#include "Source/Resources/Texture.hpp"
+#include "Source/Resources/Model.hpp"
+#include "Source/Resources/Material.hpp"
 #include "UniformBufferObject.hpp"
 #include "ResourceManager.hpp"
 #include "VulkMesh.hpp"
@@ -26,10 +26,14 @@
 class Rend {
 	public:
 		void beginLoop();
-		void initVulkan(std::vector<Material> materials);
+		void initVulkan();
 		void registerMaterial(Material &material);
 		void renderModel(Model model);
 		void processModelQueue();
+
+        DisplayInstance *displayInstance;
+        VulkanInstance *vInstance;
+        ResourceManager *resourceManager;
 
 		Rend();
 

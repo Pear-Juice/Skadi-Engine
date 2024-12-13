@@ -29,10 +29,6 @@ const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 const int MAX_FRAMES_IN_FLIGHT = 2;
 
-DisplayInstance *displayInstance;
-VulkanInstance *vInstance;
-ResourceManager *resourceManager;
-
 VkDevice device;
 VkPhysicalDevice physicalDevice;
 GLFWwindow *window;
@@ -58,7 +54,7 @@ void Rend::beginLoop() {
 	cleanup();
 }
 
-void Rend::initVulkan(std::vector<Material> materials) {
+void Rend::initVulkan() {
 
 	createSwapChain(); 
 	createImageViews();
@@ -103,8 +99,8 @@ void Rend::registerMaterial(Material &material) {
 	vulkMaterial.pool = resourceManager->createDescriptorPool(MAX_FRAMES_IN_FLIGHT, 0, 1);
 	vulkMaterial.layout = resourceManager->createDescriptorSetLayout(0,1,0);
 
-	for (Texture texture : material.textures) {
-		vulkMaterial.textures.push_back(createVulkTexture(texture));
+	for (auto kv : material.textures) {
+		vulkMaterial.textures.push_back(createVulkTexture(kv.second));
 	}
 
 	if (vulkMaterials.find(material.id) != vulkMaterials.end()) {
@@ -700,7 +696,7 @@ void Rend::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageInde
 	ubo.model = glm::mat4(1);
 	//ubo.view = glm::lookAt(glm::vec3(2.0f,2.0f,2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
 	//ubo.view = glm::rotate(translate(glm::mat4(1), glm::vec3(0,0,-4)), glm::radians(-50.0f), glm::vec3(1,0,0));
-	ubo.view = glm::translate(glm::rotate(glm::mat4(1), glm::radians(30.0f), glm::vec3(1,0,0)), glm::vec3(0,-2,-4));
+	ubo.view = glm::translate(glm::rotate(glm::mat4(1), glm::radians(30.0f), glm::vec3(1,0,0)), glm::vec3(0,-5,10));
 	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
 
 	updateUniformBuffer(ubo);
@@ -738,8 +734,9 @@ void Rend::drawFrame() {
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		recreateSwapChain();
 		return;
+	}
 
-	} else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
 		throw std::runtime_error("failed to aquire swapchain image");
 	}
 

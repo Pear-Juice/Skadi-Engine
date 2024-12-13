@@ -10,7 +10,7 @@
 
 struct Material {
     uuids::uuid id;
-    std::vector<uuids::uuid> textures;
+    std::unordered_map<std::string, Texture> textures;
 };
 
 #endif //MATERIAL_HPP

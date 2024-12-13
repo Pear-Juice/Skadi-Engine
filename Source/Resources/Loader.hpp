@@ -9,12 +9,12 @@
 
 class Loader {
     public:
-        std::vector<Model> loadModels(std::filesystem::path filePath);
+        std::tuple<std::vector<Model>, std::vector<Material>> loadModels(std::filesystem::path filePath);
         Texture loadTexture(std::filesystem::path filePath);
         Texture loadTexture(const aiTexture *texture);
 
     private:
-        void processAiNode(const aiScene *scene, aiNode *node, std::vector<Model> &models);
+        void processAiNode(const aiScene *scene, aiNode *node, std::vector<Model> &models, std::unordered_map<std::uint32_t, Material> &materials);
 
 
         static glm::mat4 Assimp2Glm(const aiMatrix4x4& from)

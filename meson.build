@@ -8,10 +8,11 @@ sources = ['Launch.cpp',
             'Source/Graphics/VulkanInstance.cpp',
             'Source/Graphics/DisplayInstance.cpp',
             'Source/Graphics/ResourceManager.cpp',
-            'Source/Resources/Loader.cpp']
+            'Source/Resources/Loader.cpp',
+            'Source/Input/Input.cpp']
 
 #dep_spirv = meson.get_compiler('cpp').find_library('SPIRV')
-deps = [dependency('vulkan'), dependency('glfw3'), dependency('assimp')]
+deps = [dependency('vulkan'), dependency('glfw3'), dependency('assimp'), dependency('unordered_dense')]
 
 exe = executable('Skadi', sources, dependencies : deps,
   install : true)
