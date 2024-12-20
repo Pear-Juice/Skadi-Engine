@@ -21,6 +21,9 @@
 #include <chrono>
 
 #include "Rend.hpp"
+
+#include <Source/Resources/Loader.hpp>
+
 #include "DynamicBuffer.hpp"
 #include "DisplayInstance.hpp"
 #include "VulkanInstance.hpp"
@@ -42,6 +45,8 @@ Rend::Rend() {
 
 	resourceManager = new ResourceManager(*vInstance, *displayInstance);
 
+	camera = Camera(glm::mat4(1), 45, WIDTH, HEIGHT);
+
 	device = vInstance->device;
 	physicalDevice = displayInstance->physicalDevice;
 	window = displayInstance->window;
@@ -50,12 +55,40 @@ Rend::Rend() {
 void Rend::beginLoop() {
 	std::cout << "Run" << '\n';
 	
-	mainLoop();
+	renderThread = std::thread(&Rend::mainLoop, this);
+}
+
+void Rend::mainLoop() {
+	while (!glfwWindowShouldClose(displayInstance->window)) {
+		auto start = std::chrono::steady_clock::now();
+
+		glfwPollEvents();
+		drawFrame();
+
+		auto end = std::chrono::steady_clock::now();
+		auto frame_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(end-start).count();
+
+		if (frame_elapsed_millis <= maxFrameTimeMilli) {
+			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(maxFrameTimeMilli - frame_elapsed_millis)));
+		}
+
+		//Uncomment to print render time
+		// auto total_end = std::chrono::steady_clock::now();
+		// auto total_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(total_end-start).count();
+
+		// std::cout << total_elapsed_millis << "\n";
+	}
+
+	vkDeviceWaitIdle(device);
 	cleanup();
 }
 
-void Rend::initVulkan() {
+void Rend::setMaxFPS(int fps) {
+	maxFrameTimeMilli = 1.0f / static_cast<float>(fps) * 1000.0f;
+}
 
+
+void Rend::initVulkan() {
 	createSwapChain(); 
 	createImageViews();
 	createRenderPass();
@@ -89,18 +122,35 @@ void Rend::initVulkan() {
 	std::cout << "Initialized Vulkan\n";
 }
 
-void Rend::renderModel(Model model) {
-	modelQueue.push(model);
+void Rend::renderMesh(Mesh mesh) {
+	meshQueue.push(mesh);
+}
+
+void Rend::updateMeshTransform(uuids::uuid uuid, glm::mat4 transform) {
+	if (vulkMeshes.contains(uuid))
+		vulkMeshes[uuid].mesh.transform = transform;
+	else
+		std::cout << "REND: Mesh ID: " << uuid << " is not a model ID\n";
+}
+
+void Rend::updateMesh(uuids::uuid uuid, Mesh mesh) {
+	
+}
+
+void Rend::eraseMesh(uuids::uuid uuid) {
+
 }
 
 //Change to material that has list of textures
 void Rend::registerMaterial(Material &material) {
+	materialSubmitMutex.lock();
+
 	VulkMaterial vulkMaterial{};
 	vulkMaterial.pool = resourceManager->createDescriptorPool(MAX_FRAMES_IN_FLIGHT, 0, 1);
 	vulkMaterial.layout = resourceManager->createDescriptorSetLayout(0,1,0);
 
-	for (auto kv : material.textures) {
-		vulkMaterial.textures.push_back(createVulkTexture(kv.second));
+	for (auto [id, texture] : material.textures) {
+		vulkMaterial.textures.push_back(createVulkTexture(texture));
 	}
 
 	if (vulkMaterials.find(material.id) != vulkMaterials.end()) {
@@ -110,46 +160,47 @@ void Rend::registerMaterial(Material &material) {
 
 	vulkMaterial.sets = resourceManager->createImageDescriptorSets(vulkMaterial.pool, vulkMaterial.layout, vulkMaterial.textures, MAX_FRAMES_IN_FLIGHT);
 	vulkMaterials[material.id] = vulkMaterial;
+
+	materialSubmitMutex.unlock();
 }
 
-void Rend::processModelQueue() {
-	while (!modelQueue.empty()) {
-		Model model = modelQueue.front();
-		std::cout << "Process model: " << model.id << "\n";
+void Rend::processMeshQueue() {
+	meshQueueSubmitMutex.lock();
 
-		submitMutex.lock();
-		for (const Mesh &mesh : model.meshes) {
-			TransferBuffer vertexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.vertices.size() * sizeof(Vertex));
-			TransferBuffer indexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, mesh.indices.size() * sizeof(uint32_t));
+	if (!meshQueue.empty())
+		std::cout << "REND: Queuing " << meshQueue.size() << " meshes\n";
+	while (!meshQueue.empty()) {
+		Mesh mesh = meshQueue.front();
 
-			resourceManager->transferBufferWrite<Vertex>(vertexBuffer, mesh.vertices);
-			resourceManager->transferBufferWrite<uint32_t>(indexBuffer, mesh.indices);
+		TransferBuffer vertexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.vertices.size() * sizeof(Vertex));
+		TransferBuffer indexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, mesh.indices.size() * sizeof(uint32_t));
 
-			VulkMesh vulkMesh{};
-			vulkMesh.mesh = mesh;
-			vulkMesh.vertexBuffer = vertexBuffer;
-			vulkMesh.indexBuffer = indexBuffer;
-			vulkMesh.transform = model.transform;
+		resourceManager->transferBufferWrite<Vertex>(vertexBuffer, mesh.vertices);
+		resourceManager->transferBufferWrite<uint32_t>(indexBuffer, mesh.indices);
 
-			std::vector<VkDescriptorSet> bindSets;
+		VulkMesh vulkMesh{};
+		vulkMesh.mesh = mesh;
+		vulkMesh.vertexBuffer = vertexBuffer;
+		vulkMesh.indexBuffer = indexBuffer;
 
-			try {
-				bindSets = vulkMaterials.at(mesh.materialID).sets;
-			}
-			catch(const std::out_of_range &e)
-			{
-				std::cout << "Failed to bind texture: " << mesh.materialID << '\n';
-			}
+		std::vector<VkDescriptorSet> bindSets;
 
-			vulkMesh.textureDescriptors = bindSets;
-
-			vulkMeshes[mesh.id] = vulkMesh;
+		try {
+			bindSets = vulkMaterials.at(mesh.materialID).sets;
+		}
+		catch(const std::out_of_range &e)
+		{
+			std::cout << "Failed to bind texture: " << mesh.materialID << '\n';
 		}
 
-		submitMutex.unlock();
+		vulkMesh.textureDescriptors = bindSets;
 
-		modelQueue.pop();
+		vulkMeshes[mesh.id] = vulkMesh;
+
+		meshQueue.pop();
 	}
+
+	meshQueueSubmitMutex.unlock();
 }
 
 ///Searches available swap formats for SRGB 32 bit and returns it if it exits
@@ -692,14 +743,19 @@ void Rend::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageInde
 	scissor.extent = swapChainExtent;
 	vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-	UniformBufferObject ubo{};
-	ubo.model = glm::mat4(1);
-	//ubo.view = glm::lookAt(glm::vec3(2.0f,2.0f,2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
-	//ubo.view = glm::rotate(translate(glm::mat4(1), glm::vec3(0,0,-4)), glm::radians(-50.0f), glm::vec3(1,0,0));
-	ubo.view = glm::translate(glm::rotate(glm::mat4(1), glm::radians(30.0f), glm::vec3(1,0,0)), glm::vec3(0,-5,10));
-	ubo.proj = glm::perspective(glm::radians(45.0f), swapChainExtent.width / (float) swapChainExtent.height, 0.1f, 100.0f);
+	// UniformBufferObject ubo{};
+	// //ubo.view = glm::lookAt(glm::vec3(2.0f,2.0f,2.0f), glm::vec3(0.0f,0.0f,0.0f), glm::vec3(0.0f,0.0f,1.0f));
+	// //ubo.view = glm::rotate(translate(glm::mat4(1), glm::vec3(0,0,-4)), glm::radians(-50.0f), glm::vec3(1,0,0));
+	// ubo.view = glm::translate(glm::rotate(glm::mat4(1), glm::radians(30.0f), glm::vec3(1,0,0)), glm::vec3(0,-5,10));
+	// ubo.proj = glm::perspective(glm::radians(45.0f), static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height), 0.1f, 100.0f);
+	//
 
-	updateUniformBuffer(ubo);
+	if (displayInstance->windowResized) {
+		camera.setViewport(displayInstance->windowWidth, displayInstance->windowHeight);
+		std::cout << "resize to: " << displayInstance->windowWidth << ", " << displayInstance->windowHeight << "\n";
+	}
+
+	updateUniformBuffer(camera.getUBO());
 
 	//vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline.layout, 0, 1, &uboDescriptorSets[frame], 0, nullptr);
 
@@ -713,7 +769,7 @@ void Rend::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageInde
 		vkCmdBindIndexBuffer(commandBuffer, vulkMesh.indexBuffer.buffer, 0, VK_INDEX_TYPE_UINT32);
 
 
-		glm::mat4 transform = vulkMesh.transform;
+		glm::mat4 transform = vulkMesh.mesh.transform;
 		vkCmdPushConstants(commandBuffer, graphicsPipeline.layout, VK_SHADER_STAGE_VERTEX_BIT, 0, 64, &transform);
 
 		vkCmdDrawIndexed(commandBuffer, vulkMesh.indexBuffer.objectCount, 1, 0, 0, 0);
@@ -787,22 +843,12 @@ void Rend::drawFrame() {
 
 	frame = (frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-	processModelQueue();
+	processMeshQueue();
 }
 
 void Rend::updateUniformBuffer(UniformBufferObject ubo) {
-	ubo.proj[1][1] *= -1;
 
 	memcpy(uniformBuffersMapped[frame], &ubo, sizeof(ubo));
-}
-
-void Rend::mainLoop() {
-	while (!glfwWindowShouldClose(displayInstance->window)) {
-		glfwPollEvents();
-		drawFrame();
-	}
-
-	vkDeviceWaitIdle(device);
 }
 
 void Rend::cleanupVulkMaterial(VulkMaterial material) {
@@ -857,4 +903,6 @@ void Rend::cleanup() {
 	delete displayInstance;
 	vInstance->cleanup();
 	delete vInstance;
+
+	std::cout << "Finished cleanup\n";
 }

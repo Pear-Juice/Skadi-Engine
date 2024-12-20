@@ -197,7 +197,8 @@ void DisplayInstance::windowKeyCallback(GLFWwindow* window, int keyCode, int sca
 	auto inputPressState = static_cast<Input::PressState>(pressed);
     auto inputMod = static_cast<Input::Mod>(mods);
 
-	Input::keyCallback(inputKey, inputPressState, inputMod);
+	if (Input::keyCallback)
+		Input::keyCallback(inputKey, inputPressState, inputMod);
 }
 
 void DisplayInstance::windowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
@@ -206,15 +207,18 @@ void DisplayInstance::windowMouseButtonCallback(GLFWwindow* window, int button, 
 	auto inputPressState = static_cast<Input::PressState>(action);
     auto inputMod = static_cast<Input::Mod>(mods);
 
-	Input::mouseClickCallback(inputMouseButton, inputPressState, inputMod);
+	if (Input::mouseClickCallback)
+		Input::mouseClickCallback(inputMouseButton, inputPressState, inputMod);
 }
 
 void DisplayInstance::windowMouseMoveCallback(GLFWwindow *window, double xpos, double ypos) {
-	Input::mouseMoveCallback(xpos, ypos);
+	if (Input::mouseMoveCallback)
+		Input::mouseMoveCallback(xpos, ypos);
 }
 
 void DisplayInstance::windowMouseScrollCallback(GLFWwindow *window, double xoffset, double yoffset) {
-	Input::mouseScrollCallback(xoffset, yoffset);
+	if (Input::mouseScrollCallback)
+		Input::mouseScrollCallback(xoffset, yoffset);
 }
 
 void DisplayInstance::cleanup(VkInstance &instance) {

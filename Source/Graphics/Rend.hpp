@@ -2,6 +2,7 @@
 #define REND
 
 #include <cstdint>
+#include <thread>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -21,25 +22,37 @@
 #include "VulkMesh.hpp"
 #include "VulkTexture.hpp"
 #include "VulkMaterial.hpp"
-#include <uuid/uuid.h>
+#include "Camera.hpp"
 
 class Rend {
 	public:
 		void beginLoop();
 		void initVulkan();
 		void registerMaterial(Material &material);
-		void renderModel(Model model);
-		void processModelQueue();
+		void renderMesh(Mesh mesh);
+
+        void updateMeshTransform(uuids::uuid uuid, glm::mat4 transform);
+        void updateMesh(uuids::uuid uuid, Mesh mesh);
+        void eraseMesh(uuids::uuid uuid);
+		void processMeshQueue();
+		void setMaxFPS(int fps = 120);
+
+		Camera camera;
 
         DisplayInstance *displayInstance;
         VulkanInstance *vInstance;
         ResourceManager *resourceManager;
 
+		std::thread renderThread;
+
 		Rend();
 
 	private:
-		std::mutex submitMutex;
-		std::queue<Model> modelQueue;
+		float maxFrameTimeMilli = 8.333;
+
+		std::mutex materialSubmitMutex;
+		std::mutex meshQueueSubmitMutex;
+		std::queue<Mesh> meshQueue;
 		std::unordered_map<uuids::uuid, VulkMesh> vulkMeshes;
 		std::unordered_map<uuids::uuid, VulkMaterial> vulkMaterials;
 
@@ -58,7 +71,6 @@ class Rend {
 		VkDescriptorPool uboDescriptorPool;
 		std::vector<VkDescriptorSet> uboDescriptorSets;
 
-	//TEMP
 		VkDescriptorSetLayout samplerDescriptorSetLayout;
 		ResourceManager::GraphicsPipeline graphicsPipeline;
 

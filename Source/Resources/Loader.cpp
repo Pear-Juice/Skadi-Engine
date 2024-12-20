@@ -25,13 +25,14 @@
 #include "../../Dependancies/tiny_gltf.h"
 #include "Source/IdGen.hpp"
 
-void Loader::processAiNode(const aiScene *scene, aiNode *node, std::vector<Model> &models, std::unordered_map<uint32_t, Material> &materials) {
+void Loader::processAiNode(const aiScene *scene, aiNode *node, std::vector<Mesh> &meshes, std::unordered_map<uint32_t, Material> &materials) {
 	std::unordered_map<std::string, std::string> texture_paths;
-	std::vector<Mesh> meshes;
+	glm::mat4 nodeTransform = Assimp2Glm(node->mTransformation);
 
 	for (uint32_t i = 0; i < node->mNumMeshes; i++) {
 		Mesh mesh{};
 		mesh.id = IDGen::genID();
+		mesh.transform = nodeTransform;
 
 		aiMesh *assimpMesh = scene->mMeshes[node->mMeshes[i]];
 
@@ -73,10 +74,12 @@ void Loader::processAiNode(const aiScene *scene, aiNode *node, std::vector<Model
 				else { //Create material and add texture
 					Material newMat{};
 					newMat.id = IDGen::genID();
-					materials[materialIndex] = newMat;
 
+					//CHECK FOR MEMORY LEAK, DO THESE RESOURCES GET FREED?
 					const aiTexture *aiTex = scene->GetEmbeddedTexture(texturePath.C_Str());
 					newMat.textures[texturePath.C_Str()] = loadTexture(aiTex);
+
+					materials[materialIndex] = newMat;
 				}
 
 				//store material ID in mesh
@@ -91,22 +94,12 @@ void Loader::processAiNode(const aiScene *scene, aiNode *node, std::vector<Model
 		meshes.push_back(mesh);
 	}
 
-	if (!meshes.empty()) {
-		Model model;
-		model.id = IDGen::genID();
-		model.meshes = meshes;
-		model.name = node->mName.C_Str();
-		model.transform = Assimp2Glm(node->mTransformation);
-
-		models.push_back(model);
-	}
-
 	for (uint32_t i = 0; i < node->mNumChildren; i++) {
-		processAiNode(scene, node->mChildren[i], models, materials);
+		processAiNode(scene, node->mChildren[i], meshes, materials);
 	}
 }
 
-std::tuple<std::vector<Model>, std::vector<Material>> Loader::loadModels(std::filesystem::path path) {
+std::tuple<std::vector<Mesh>, std::vector<Material>> Loader::loadModels(std::filesystem::path path) {
 	Assimp::Importer importer;
 
 	const aiScene *scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_JoinIdenticalVertices);
@@ -118,9 +111,9 @@ std::tuple<std::vector<Model>, std::vector<Material>> Loader::loadModels(std::fi
 		return {};
 	}
 
-	std::vector<Model> models;
+	std::vector<Mesh> meshes;
 	std::unordered_map<uint32_t, Material> material_dict;
-	processAiNode(scene, scene->mRootNode, models, material_dict);
+	processAiNode(scene, scene->mRootNode, meshes, material_dict);
 
 	std::vector<Material> materials;
 	materials.reserve(material_dict.size());
@@ -129,7 +122,7 @@ std::tuple<std::vector<Model>, std::vector<Material>> Loader::loadModels(std::fi
 		materials.push_back(kv.second);
 	}
 
-	return std::make_tuple(models, materials);
+	return std::make_tuple(meshes, materials);
 }
 
 Texture Loader::loadTexture(std::filesystem::path filePath) {

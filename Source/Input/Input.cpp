@@ -41,42 +41,63 @@ Input::Input() {
 }
 
 void Input::updateCallbacks() {
-     keyCallback = [actionMap = actions, currentKeyData = keyData](const Key key=KEY_NONE, const PressState pressState=RELEASED, const Mod mod=MOD_NONE) mutable
+     keyCallback = [&actionMap = actions, currentKeyData = keyData](const Key key=KEY_NONE, const PressState pressState=RELEASED, const Mod mod=MOD_NONE) mutable
      {processKeyActions(key, pressState, mod, actionMap, currentKeyData);};
 
-     mouseClickCallback = [mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Click"](const Mouse button=MOUSE_NONE, const PressState pressState=RELEASED, const Mod mod=MOD_NONE) mutable
+     mouseClickCallback = [&mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Click"](const Mouse button=MOUSE_NONE, const PressState pressState=RELEASED, const Mod mod=MOD_NONE) mutable
      {processMouseActions(button, pressState, mod,currentMouseData->xPos ,currentMouseData->yPos , type, mouseActionMap, *currentMouseData);};
 
-     mouseMoveCallback = [mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Move"](const int xPos, const int yPos) mutable
+     mouseMoveCallback = [&mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Move"](const int xPos, const int yPos) mutable
      {processMouseActions(MOUSE_NONE ,RELEASED ,MOD_NONE ,xPos, yPos, type, mouseActionMap, *currentMouseData);};
 
-     mouseScrollCallback = [mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Scroll"](const int xOffset, const int yOffset) mutable
+     mouseScrollCallback = [&mouseActionMap = mouseActions, currentMouseData = &mouseData, type = "Scroll"](const int xOffset, const int yOffset) mutable
      {processMouseActions(MOUSE_NONE, RELEASED, MOD_NONE, xOffset, yOffset, type, mouseActionMap, *currentMouseData);};
  }
 
-void Input::addAction(std::string name, Key key) {
-     //If action list has action, append key to action
+Input::Action Input::addAction(std::string name, Key key) {
+     // If action list has action, append key to action
      if (hasAction(name)) {
          Action* action = getAction(name);
          action->mapping.keys.push_back(key);
-         return;
+         return *action;
      }
 
      //Create new action and append key
      KeyMapping mapping{};
      mapping.keys.push_back(key);
 
+     Action action{name, mapping};
+     actions.emplace_back(action);
+
+     updateCallbacks();
+     return actions.at(actions.size()-1);
+}
+
+Input::Action* Input::addAction(std::string name, std::vector<Key> keys) {
+     // If action list has action, append key to action
+     if (hasAction(name)) {
+         Action* action = getAction(name);
+         action->mapping.keys.insert(action->mapping.keys.begin(), keys.begin(), keys.end());
+         return action;
+     }
+
+     //Create new action and append key
+     KeyMapping mapping{};
+     mapping.keys.insert(mapping.keys.begin(), keys.begin(), keys.end());
+
      actions.emplace_back(name, mapping);
 
      updateCallbacks();
-}
 
-void Input::addMouseAction(std::string name, Mouse mouse) {
+     return &actions.back();
+ }
+
+Input::MouseAction* Input::addMouseAction(std::string name, Mouse mouse) {
     //If action list has action, append key to action
      if (hasMouseAction(name)) {
          MouseAction* action = getMouseAction(name);
          action->mapping.buttons.push_back(mouse);
-         return;
+         return action;
      }
 
      //Create new action and append key
@@ -88,6 +109,27 @@ void Input::addMouseAction(std::string name, Mouse mouse) {
      printMouseActionMap(mouseActions);
 
      updateCallbacks();
+
+     return &mouseActions.back();
+ }
+
+Input::MouseAction* Input::addMouseAction(std::string name, std::vector<Mouse> buttons) {
+    //If action list has action, append key to action
+     if (hasMouseAction(name)) {
+         MouseAction* action = getMouseAction(name);
+         action->mapping.buttons.insert(action->mapping.buttons.begin(), buttons.begin(), buttons.end());
+         return action;
+     }
+
+     //Create new action and append key
+     MouseMapping mapping{};
+     mapping.buttons.insert(mapping.buttons.begin(), buttons.begin(), buttons.end());
+
+     mouseActions.emplace_back(name, mapping);
+
+     updateCallbacks();
+
+     return &mouseActions.back();
  }
 
 bool Input::hasAction(std::string name) {
@@ -142,24 +184,45 @@ bool Input::removeMouseAction(std::string name) {
 }
 
 void Input::pushKeyCallback(std::string actionName, std::function<void(KeyData)> callback) {
-     getAction(actionName)->mapping.callbacks.push_back(callback);
-     updateCallbacks();
+     if (const auto action = getAction(actionName)) {
+         action->mapping.callbacks.push_back(callback);
+         updateCallbacks();
+     }
+     else {
+         std::cout << "SKADI: Failed to push callback, matching action does not exist\n";
+     }
+
  }
 
 void Input::popKeyCallback(std::string actionName) {
-     getAction(actionName)->mapping.callbacks.pop_back();
-     updateCallbacks();
+     if (const auto action = getAction(actionName)) {
+         action->mapping.callbacks.pop_back();
+         updateCallbacks();
+     }
+     else {
+         std::cout << "SKADI: Failed to pop callback, matching action does not exist\n";
+     }
  }
 
 
 void Input::pushMouseCallback(std::string actionName, std::function<void(MouseData)> callback) {
-     getMouseAction(actionName)->mapping.callbacks.push_back(callback);
-     updateCallbacks();
+     if (const auto action = getMouseAction(actionName)) {
+         action->mapping.callbacks.push_back(callback);
+         updateCallbacks();
+     }
+     else {
+         std::cout << "SKADI: Failed to push callback, matching mouse action does not exist\n";
+     }
  }
 
 void Input::popMouseCallback(std::string actionName) {
-     getMouseAction(actionName)->mapping.callbacks.pop_back();
-     updateCallbacks();
+     if (const auto action = getMouseAction(actionName)) {
+         action->mapping.callbacks.pop_back();
+         updateCallbacks();
+     }
+     else {
+         std::cout << "SKADI: Failed to pop callback, matching mouse action does not exist\n";
+     }
  }
 
 void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod, ActionMap &actionMap, KeyData &keyData) {
@@ -178,7 +241,7 @@ void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod,
                     func(data);
                 }
 
-                // std::cout << "Pressed " << keyToString(mapping.data.key) << "!\n";
+                std::cout << "Pressed " << keyToString(mapping.data.key) << " " << mapping.callbacks.size() << "!\n";
             }
         }
     }

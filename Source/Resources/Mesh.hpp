@@ -10,6 +10,7 @@
 
 struct Mesh {
 	uuids::uuid id;
+	glm::mat4 transform;
 	std::vector<Vertex> vertices;
 	std::vector<uint32_t> indices;
 
