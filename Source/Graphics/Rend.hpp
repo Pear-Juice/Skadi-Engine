@@ -32,9 +32,8 @@ class Rend {
 		void renderMesh(Mesh mesh);
 
         void updateMeshTransform(uuids::uuid uuid, glm::mat4 transform);
-        void updateMesh(uuids::uuid uuid, Mesh mesh);
+        void updateMesh(Mesh mesh);
         void eraseMesh(uuids::uuid uuid);
-		void processMeshQueue();
 		void setMaxFPS(int fps = 120);
 
 		Camera camera;
@@ -50,12 +49,16 @@ class Rend {
 	private:
 		float maxFrameTimeMilli = 8.333;
 
-		std::mutex materialSubmitMutex;
-		std::mutex meshQueueSubmitMutex;
+		std::mutex materialRegisterMutex;
+		std::mutex meshRenderMutex;
+
 		std::queue<Mesh> meshQueue;
+		std::queue<Material> materialQueue;
 		std::unordered_map<uuids::uuid, VulkMesh> vulkMeshes;
 		std::unordered_map<uuids::uuid, VulkMaterial> vulkMaterials;
 
+		void processMeshQueue();
+		void processMaterialQueue();
 
 		VkSwapchainKHR swapChain;
 		std::vector<VkImage> swapChainImages;

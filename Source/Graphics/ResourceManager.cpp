@@ -597,7 +597,7 @@ void ResourceManager::endSingleTimeCommands(VkCommandBuffer &commandBuffer, VkCo
 	submitInfo.pNext = nullptr;
 	submitInfo.commandBufferCount = 1;
 	submitInfo.pCommandBuffers = &commandBuffer;
-	
+
 	vkQueueSubmit(vulkanInstance.graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
 	vkQueueWaitIdle(vulkanInstance.graphicsQueue);
 	vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);

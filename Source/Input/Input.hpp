@@ -88,16 +88,15 @@ public:
 
     typedef std::vector<MouseAction> MouseActionMap;
     MouseActionMap mouseActions;
-
-    Action addAction(std::string name, Key key);
-    Action* addAction(std::string name, std::vector<Key> keys);
+    void addAction(std::string name, Key key);
+    void addAction(std::string name, std::vector<Key> keys);
     bool hasAction(std::string name);
     Action* getAction(std::string name);
     bool removeAction(std::string);
     void printActionMap(const ActionMap& actionMap);
 
-    MouseAction* addMouseAction(std::string name, Mouse button);
-    MouseAction* addMouseAction(std::string name, std::vector<Mouse> buttons);
+    void addMouseAction(std::string name, Mouse button);
+    void addMouseAction(std::string name, std::vector<Mouse> buttons);
     bool hasMouseAction(std::string name);
     MouseAction* getMouseAction(std::string);
     bool removeMouseAction(std::string);

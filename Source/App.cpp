@@ -72,25 +72,23 @@ App::App(std::string projectDirectory) {
 	std::cout << "Init time millis: " << elapsed_millis.count() << "\n";
 
 	Input input;
-	auto upAction = input.addAction("Up", Input::KEY_SPACE);
-	auto downAction = input.addAction("Down", Input::KEY_SHIFT);
-	auto leftAction = input.addAction("Left", {Input::KEY_A, Input::LEFT_ARROW});
-	auto rightAction = input.addAction("Right", {Input::KEY_D, Input::RIGHT_ARROW});
-	auto forwardAction = input.addAction("Forward", {Input::KEY_W, Input::UP_ARROW});
-	auto backwardAction = input.addAction("Backward", {Input::KEY_S, Input::DOWN_ARROW});
+	input.addAction("Up", Input::KEY_SPACE);
+	input.addAction("Down", Input::KEY_SHIFT);
+	input.addAction("Left", {Input::KEY_A, Input::LEFT_ARROW});
+	input.addAction("Right", {Input::KEY_D, Input::RIGHT_ARROW});
+	input.addAction("Forward", {Input::KEY_W, Input::UP_ARROW});
+	input.addAction("Backward", {Input::KEY_S, Input::DOWN_ARROW});
 	input.addAction("MoveLeft", Input::KEY_Q);
 	input.addAction("MoveRight", Input::KEY_E);
 
-	std::cout << "Up action: " << upAction.name << "\n";
-
-	auto ua = input.getAction("Up");
-	auto da = input.getAction("Down");
-	auto fa = input.getAction("Forward");
-	auto ba = input.getAction("Backward");
-	auto la = input.getAction("Left");
-	auto ra = input.getAction("Right");
-	auto ml = input.getAction("MoveLeft");
-	auto mr = input.getAction("MoveRight");
+	auto upAction = input.getAction("Up");
+	auto downAction = input.getAction("Down");
+	auto forwardAction = input.getAction("Forward");
+	auto backAction = input.getAction("Backward");
+	auto leftAction = input.getAction("Left");
+	auto rightAction = input.getAction("Right");
+	auto moveLeftAction = input.getAction("MoveLeft");
+	auto moveRightAction = input.getAction("MoveRight");
 
 	float flyspeed = 0.2f;
 	float turnspeed = 0.02f;
@@ -99,38 +97,39 @@ App::App(std::string projectDirectory) {
 	glm::mat4 camPosMat(1);
 
 	while (true) {
+		auto start = std::chrono::steady_clock::now();
+
 		glm::vec3 moveDir(0);
 		int rotateDir = 0;
-		auto start = std::chrono::steady_clock::now();
-		if (la->mapping.data.pressState == Input::PRESSED || la->mapping.data.pressState == Input::HELD) {
+		if (leftAction->mapping.data.pressState == Input::PRESSED || leftAction->mapping.data.pressState == Input::HELD) {
 			rotateDir = -1;
 		}
 
-		if (ra->mapping.data.pressState == Input::PRESSED || ra->mapping.data.pressState == Input::HELD) {
+		if (rightAction->mapping.data.pressState == Input::PRESSED || rightAction->mapping.data.pressState == Input::HELD) {
 			rotateDir = 1;
 		}
 
-		if (ua->mapping.data.pressState == Input::PRESSED || ua->mapping.data.pressState == Input::HELD) {
+		if (upAction->mapping.data.pressState == Input::PRESSED || upAction->mapping.data.pressState == Input::HELD) {
 			moveDir =  glm::vec3(0,-flyspeed,0);
 		}
 
-		if (da->mapping.data.pressState == Input::PRESSED || da->mapping.data.pressState == Input::HELD) {
+		if (downAction->mapping.data.pressState == Input::PRESSED || downAction->mapping.data.pressState == Input::HELD) {
 			moveDir = glm::vec3(0,flyspeed,0);
 		}
 
-		if (fa->mapping.data.pressState == Input::PRESSED || fa->mapping.data.pressState == Input::HELD) {
+		if (forwardAction->mapping.data.pressState == Input::PRESSED || forwardAction->mapping.data.pressState == Input::HELD) {
 			moveDir = glm::vec3(0,-0,flyspeed);
 		}
 
-		if (ba->mapping.data.pressState == Input::PRESSED || ba->mapping.data.pressState == Input::HELD) {
+		if (backAction->mapping.data.pressState == Input::PRESSED || backAction->mapping.data.pressState == Input::HELD) {
 			moveDir =  glm::vec3(0,0,-flyspeed);
 		}
 
-		if (ml->mapping.data.pressState == Input::PRESSED || ml->mapping.data.pressState == Input::HELD) {
+		if (moveLeftAction->mapping.data.pressState == Input::PRESSED || moveLeftAction->mapping.data.pressState == Input::HELD) {
 			moveDir = glm::vec3(flyspeed,00,0);
 		}
 
-		if (mr->mapping.data.pressState == Input::PRESSED || mr->mapping.data.pressState == Input::HELD) {
+		if (moveRightAction->mapping.data.pressState == Input::PRESSED || moveRightAction->mapping.data.pressState == Input::HELD) {
 			moveDir =  glm::vec3(-flyspeed,0,0);
 		}
 

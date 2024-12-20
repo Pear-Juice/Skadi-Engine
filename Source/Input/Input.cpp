@@ -54,12 +54,12 @@ void Input::updateCallbacks() {
      {processMouseActions(MOUSE_NONE, RELEASED, MOD_NONE, xOffset, yOffset, type, mouseActionMap, *currentMouseData);};
  }
 
-Input::Action Input::addAction(std::string name, Key key) {
+void Input::addAction(std::string name, Key key) {
      // If action list has action, append key to action
      if (hasAction(name)) {
          Action* action = getAction(name);
          action->mapping.keys.push_back(key);
-         return *action;
+         return;
      }
 
      //Create new action and append key
@@ -67,18 +67,17 @@ Input::Action Input::addAction(std::string name, Key key) {
      mapping.keys.push_back(key);
 
      Action action{name, mapping};
-     actions.emplace_back(action);
+     actions.push_back(action);
 
      updateCallbacks();
-     return actions.at(actions.size()-1);
 }
 
-Input::Action* Input::addAction(std::string name, std::vector<Key> keys) {
+void Input::addAction(std::string name, std::vector<Key> keys) {
      // If action list has action, append key to action
      if (hasAction(name)) {
          Action* action = getAction(name);
          action->mapping.keys.insert(action->mapping.keys.begin(), keys.begin(), keys.end());
-         return action;
+         return;
      }
 
      //Create new action and append key
@@ -88,16 +87,14 @@ Input::Action* Input::addAction(std::string name, std::vector<Key> keys) {
      actions.emplace_back(name, mapping);
 
      updateCallbacks();
-
-     return &actions.back();
  }
 
-Input::MouseAction* Input::addMouseAction(std::string name, Mouse mouse) {
+void Input::addMouseAction(std::string name, Mouse mouse) {
     //If action list has action, append key to action
      if (hasMouseAction(name)) {
          MouseAction* action = getMouseAction(name);
          action->mapping.buttons.push_back(mouse);
-         return action;
+         return;
      }
 
      //Create new action and append key
@@ -109,16 +106,14 @@ Input::MouseAction* Input::addMouseAction(std::string name, Mouse mouse) {
      printMouseActionMap(mouseActions);
 
      updateCallbacks();
-
-     return &mouseActions.back();
  }
 
-Input::MouseAction* Input::addMouseAction(std::string name, std::vector<Mouse> buttons) {
+void Input::addMouseAction(std::string name, std::vector<Mouse> buttons) {
     //If action list has action, append key to action
      if (hasMouseAction(name)) {
          MouseAction* action = getMouseAction(name);
          action->mapping.buttons.insert(action->mapping.buttons.begin(), buttons.begin(), buttons.end());
-         return action;
+         return;
      }
 
      //Create new action and append key
@@ -128,8 +123,6 @@ Input::MouseAction* Input::addMouseAction(std::string name, std::vector<Mouse> b
      mouseActions.emplace_back(name, mapping);
 
      updateCallbacks();
-
-     return &mouseActions.back();
  }
 
 bool Input::hasAction(std::string name) {

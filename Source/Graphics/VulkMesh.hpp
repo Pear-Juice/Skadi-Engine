@@ -1,7 +1,7 @@
 #ifndef VULKMESH_HPP
 #define VULKMESH_HPP
 
-#include "DynamicBuffer.hpp"
+#include "TransferBuffer.hpp"
 #include "VulkTexture.hpp"
 
 struct VulkMesh {

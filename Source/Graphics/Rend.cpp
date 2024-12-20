@@ -10,8 +10,6 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <glm/detail/qualifier.hpp>
-#include <glm/ext/matrix_clip_space.hpp>
-#include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
 #include <limits>
 #include <iostream>
@@ -24,7 +22,7 @@
 
 #include <Source/Resources/Loader.hpp>
 
-#include "DynamicBuffer.hpp"
+#include "TransferBuffer.hpp"
 #include "DisplayInstance.hpp"
 #include "VulkanInstance.hpp"
 
@@ -133,44 +131,64 @@ void Rend::updateMeshTransform(uuids::uuid uuid, glm::mat4 transform) {
 		std::cout << "REND: Mesh ID: " << uuid << " is not a model ID\n";
 }
 
-void Rend::updateMesh(uuids::uuid uuid, Mesh mesh) {
-	
+void Rend::updateMesh(Mesh mesh) {
+	meshQueue.push(mesh);
 }
 
 void Rend::eraseMesh(uuids::uuid uuid) {
+	auto &mesh = vulkMeshes[uuid];
+	resourceManager->destroyTransferBuffer(mesh.indexBuffer);
+	resourceManager->destroyTransferBuffer(mesh.vertexBuffer);
 
+	vulkMeshes.erase(uuid);
 }
 
 //Change to material that has list of textures
 void Rend::registerMaterial(Material &material) {
-	materialSubmitMutex.lock();
-
-	VulkMaterial vulkMaterial{};
-	vulkMaterial.pool = resourceManager->createDescriptorPool(MAX_FRAMES_IN_FLIGHT, 0, 1);
-	vulkMaterial.layout = resourceManager->createDescriptorSetLayout(0,1,0);
-
-	for (auto [id, texture] : material.textures) {
-		vulkMaterial.textures.push_back(createVulkTexture(texture));
-	}
-
-	if (vulkMaterials.find(material.id) != vulkMaterials.end()) {
-		std::cout << "Failed to register material. ID: " << material.id << " is already registered.\n";
-		return;
-	}
-
-	vulkMaterial.sets = resourceManager->createImageDescriptorSets(vulkMaterial.pool, vulkMaterial.layout, vulkMaterial.textures, MAX_FRAMES_IN_FLIGHT);
-	vulkMaterials[material.id] = vulkMaterial;
-
-	materialSubmitMutex.unlock();
+	materialQueue.push(material);
 }
 
-void Rend::processMeshQueue() {
-	meshQueueSubmitMutex.lock();
+void Rend::processMaterialQueue() {
+	if (!meshQueue.empty())
+		std::cout << "REND: Queueing " << materialQueue.size() << " materials\n";
 
+	while (!materialQueue.empty()) {
+		Material material = materialQueue.front();
+
+		VulkMaterial vulkMaterial{};
+		vulkMaterial.pool = resourceManager->createDescriptorPool(MAX_FRAMES_IN_FLIGHT, 0, material.textures.size());
+		vulkMaterial.layout = resourceManager->createDescriptorSetLayout(0,material.textures.size(),0);
+
+		for (auto [id, texture] : material.textures) {
+			vulkMaterial.textures.push_back(createVulkTexture(texture));
+		}
+
+		if (vulkMaterials.contains(material.id)) {
+			std::cout << "Failed to register material. ID: " << material.id << " is already registered.\n";
+			return;
+		}
+
+		vulkMaterial.sets = resourceManager->createImageDescriptorSets(vulkMaterial.pool, vulkMaterial.layout, vulkMaterial.textures, MAX_FRAMES_IN_FLIGHT);
+		vulkMaterials[material.id] = vulkMaterial;
+
+		materialQueue.pop();
+	}
+}
+
+
+void Rend::processMeshQueue() {
 	if (!meshQueue.empty())
 		std::cout << "REND: Queuing " << meshQueue.size() << " meshes\n";
 	while (!meshQueue.empty()) {
 		Mesh mesh = meshQueue.front();
+
+		//if a mesh already exists with this id, free buffers so they can be recreated
+		if (vulkMeshes.contains(mesh.id)) {
+			auto &originalMesh = vulkMeshes.at(mesh.id);
+
+			resourceManager->destroyTransferBuffer(originalMesh.indexBuffer);
+			resourceManager->destroyTransferBuffer(originalMesh.vertexBuffer);
+		}
 
 		TransferBuffer vertexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, mesh.vertices.size() * sizeof(Vertex));
 		TransferBuffer indexBuffer = resourceManager->createTransferBuffer(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, mesh.indices.size() * sizeof(uint32_t));
@@ -185,11 +203,10 @@ void Rend::processMeshQueue() {
 
 		std::vector<VkDescriptorSet> bindSets;
 
-		try {
+		if (vulkMaterials.contains(mesh.materialID)) {
 			bindSets = vulkMaterials.at(mesh.materialID).sets;
 		}
-		catch(const std::out_of_range &e)
-		{
+		else {
 			std::cout << "Failed to bind texture: " << mesh.materialID << '\n';
 		}
 
@@ -199,8 +216,6 @@ void Rend::processMeshQueue() {
 
 		meshQueue.pop();
 	}
-
-	meshQueueSubmitMutex.unlock();
 }
 
 ///Searches available swap formats for SRGB 32 bit and returns it if it exits
@@ -843,6 +858,7 @@ void Rend::drawFrame() {
 
 	frame = (frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
+	processMaterialQueue();
 	processMeshQueue();
 }
 
