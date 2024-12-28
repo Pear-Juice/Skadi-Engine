@@ -2,6 +2,7 @@
 #define APP
 
 #include <string>
+#include "Resources/Types.hpp"
 
 class App {
 	public:
