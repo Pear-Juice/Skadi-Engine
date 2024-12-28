@@ -11,7 +11,6 @@ std::function<void(Input::Mouse button, Input::PressState pressState, Input::Mod
 std::function<void(double xPos, double yPos)> Input::mouseMoveCallback;
 std::function<void(double xOffset, double yOffset)> Input::mouseScrollCallback;
 
-
  void Input::printKeyMap(const ActionMap& actionMap) {
     std::cout << "-- Dict --\n";
     for (const auto& [name, mapping] : actionMap) {
@@ -109,10 +108,7 @@ void Input::addMouseMapping(std::string name, Mouse mouse) {
          return;
      }
 
-     if (mouseLock) {
-         std::cout << "INPUT: Cannot add new mouse mapping, references would break";
-         return;
-     }
+     if (mouseLock) { std::cout << "Warning: Adding new mouse mappings will break references"; }
 
      //Create new mapping and append button
      MouseMapping mapping{};
@@ -132,10 +128,7 @@ void Input::addMouseMapping(std::string name, std::vector<Mouse> buttons) {
          return;
      }
 
-     if (mouseLock) {
-         std::cout << "INPUT: Cannot add new mouse mapping, references would break";
-         return;
-     }
+     if (mouseLock) { std::cout << "Warning: Adding new mouse mappings will break references"; }
 
      //Create new mapping and append button
      MouseMapping mapping{};
@@ -148,29 +141,67 @@ void Input::addMouseMapping(std::string name, std::vector<Mouse> buttons) {
 
 bool Input::hasKeyMapping(std::string name) {
     return actions.contains(name);
-
-    // for (const Action& action : actions) {
-    //     if (action.name == name) {
-    //         return true;
-    //     }
-    // }
-    return false;
 }
 
 bool Input::hasMouseMapping(std::string name) {
      return mouseActions.contains(name);
  }
 
-Input::KeyMapping* Input::getKeyMapping(std::string name) {
+Input::KeyMapping* Input::getKeyMapping(std::string name, bool updatePressState) {
     if (hasKeyMapping(name)) {
         keyLock = true;
-        return &actions[name];
+        auto action = &actions[name];
+
+        if (updatePressState && action->data.pressState == action->data.prevPressState) {
+            if (action->data.pressState == JUST_PRESSED) {
+                action->data.pressState = PRESSED;
+            }
+            else if (action->data.pressState == JUST_RELEASED) {
+                action->data.pressState = RELEASED;
+            }
+        }
+
+        action->data.prevPressState = action->data.pressState;
+
+        return action;
     }
 
     return nullptr;
 }
 
-Input::MouseMapping* Input::getMouseMapping(std::string name) {
+int Input::getKeyAxis(std::string name1, std::string name2, bool updatePressState) {
+     const KeyMapping* map1 = getKeyMapping(name1, updatePressState);
+     const KeyMapping* map2 = getKeyMapping(name2, updatePressState);
+
+     if (map1->data.pressState & RELEASED && map2->data.pressState & RELEASED)
+         return 0;
+
+     if (map1->data.pressState & PRESSED && map2->data.pressState & RELEASED) {
+         return -1;
+     }
+
+     if (map1->data.pressState & RELEASED && map2->data.pressState & PRESSED) {
+         return 1;
+     }
+
+     if (map1->data.pressState == map2->data.pressState) {
+         if (map1->data.justPressTimestamp > map2->data.justPressTimestamp)
+             return -1;
+         return 1;
+     }
+
+     return 0;
+ }
+
+Vector2 Input::getKeyAxis(std::string name1, std::string name2, std::string name3, std::string name4, bool updatePressState) {
+     const int axisX = getKeyAxis(name1, name2, updatePressState);
+     const int axisY = getKeyAxis(name3, name4, updatePressState);
+
+     return Vector2(axisX, axisY);
+}
+
+
+Input::MouseMapping* Input::getMouseMapping(std::string name, bool updatePressState) {
      if (hasMouseMapping(name)) {
          mouseLock = true;
          return &mouseActions[name];
@@ -239,6 +270,11 @@ void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod,
      data.pressState = pressState;
      data.mod = inputMod;
 
+     if (pressState == JUST_RELEASED)
+         data.justReleaseTimestamp = std::chrono::steady_clock::now();
+     else
+         data.justPressTimestamp = std::chrono::steady_clock::now();
+
     for (auto&[name, mapping] : actionMap) {
         for (Key key : mapping.keys) {
             if (key == inputKey) {
@@ -249,11 +285,11 @@ void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod,
                     func(data);
                 }
 
-                std::cout << "Pressed " << keyToString(mapping.data.key) << " " << mapping.callbacks.size() << "!\n";
+                // std::cout << "Press " << keyToString(inputKey) << " " << pressStateToString(pressState) << " Prev: " << pressStateToString(mapping.data.prevPressState) << "\n";
             }
         }
     }
-      keyData = data;
+     keyData = data;
 }
 
 void Input::processMouseActions(Mouse inputButton, PressState pressState, Mod mod, double x, double y, std::string type, MouseActionMap &mouseActionMap, MouseData &mouseData) {
@@ -296,9 +332,7 @@ void Input::processMouseActions(Mouse inputButton, PressState pressState, Mod mo
                  }
              }
          }
-         std::cout << "Button " << mapping.data.button << "!\n";
      }
-
  }
 
 std::string Input::keyToString(Key key) {
@@ -411,16 +445,15 @@ std::string Input::mouseToString(Mouse mouse) {
 std::string Input::pressStateToString(PressState pressState) {
      std::string str;
      switch (pressState) {
+         case JUST_RELEASED: str = "JUST_RELEASED"; break;
+         case JUST_PRESSED: str = "JUST_PRESSED"; break;
          case RELEASED: str = "RELEASED"; break;
          case PRESSED: str = "PRESSED"; break;
-         case HELD: str = "HELD"; break;
          default: str = "Error: Unregistered Press State: " + pressState; break;
      }
 
      return str;
 }
-
-
 
 //Input object contains input data
 //Input must be received

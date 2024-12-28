@@ -31,7 +31,7 @@ public:
     enum Mod {MOD_NONE=0, MOD_SHIFT=1, MOD_CTRL=2, MOD_CTRL_SHIFT=3, MOD_ALT=4, MOD_ALT_SHIFT=5, MOD_CTRL_ALT=6};
 
     enum PressState {
-        NONE=-1,RELEASED=0, PRESSED=1, HELD=2
+        NONE=-1,JUST_RELEASED=3, RELEASED=1, JUST_PRESSED=12, PRESSED=4
     };
 
     static std::string keyToString(Key key);
@@ -43,20 +43,28 @@ public:
         std::string actionName;
         Key key = KEY_NONE;
         Mod mod = MOD_NONE;
-        PressState pressState = NONE;
+
+        PressState pressState = RELEASED;
+        PressState prevPressState = RELEASED;
+
+        std::chrono::time_point<std::chrono::steady_clock> justPressTimestamp;
+        std::chrono::time_point<std::chrono::steady_clock> justReleaseTimestamp;
     };
 
     struct MouseData {
         std::string actionName;
         Mouse button = MOUSE_NONE;
-        PressState pressState = NONE;
         Mod mod = MOD_NONE;
+        PressState pressState = RELEASED;
+        PressState prevPressState = RELEASED;
+
+        std::chrono::time_point<std::chrono::steady_clock> justPressTimestamp;
+        std::chrono::time_point<std::chrono::steady_clock> justReleaseTimestamp;
 
         double xPos = 0;
         double yPos = 0;
         double xScroll = 0;
         double yScroll = 0;
-
     };
 
     struct KeyMapping {
@@ -83,14 +91,18 @@ public:
     void addKeyMapping(std::string name, Key key);
     void addKeyMapping(std::string name, std::vector<Key> keys);
     bool hasKeyMapping(std::string name);
-    KeyMapping* getKeyMapping(std::string name);
+    KeyMapping* getKeyMapping(std::string name, bool updatePressState = true);
+
+    int getKeyAxis(std::string neg, std::string pos, bool updatePressState = true);
+    Vector2 getKeyAxis(std::string negX, std::string posX, std::string negY, std::string posY, bool updatePressState = true);
+
     bool removeKeyMapping(std::string);
     void printKeyMap(const ActionMap& actionMap);
 
     void addMouseMapping(std::string name, Mouse button);
     void addMouseMapping(std::string name, std::vector<Mouse> buttons);
     bool hasMouseMapping(std::string name);
-    MouseMapping* getMouseMapping(std::string);
+    MouseMapping* getMouseMapping(std::string, bool updatePressState = true);
     bool removeMouseMapping(std::string);
     void printMouseMap(const MouseActionMap& mouseActionMap);
 
@@ -113,6 +125,20 @@ private:
     static void processMouseActions(Mouse button, PressState pressState, Mod mod, double xPos, double yPos, std::string type, MouseActionMap &mouseActionMap, MouseData &mouseData);
 };
 
+inline std::ostream& operator << (std::ostream& os, Input::Key key) {
+     return os << Input::keyToString(key);
+}
 
+inline std::ostream& operator << (std::ostream& os, Input::Mod mod) {
+     return os << Input::modToString(mod);
+}
+
+inline std::ostream& operator << (std::ostream& os, Input::Mouse mouse) {
+     return os << Input::mouseToString(mouse);
+}
+
+inline std::ostream& operator << (std::ostream& os, Input::PressState& pressState) {
+     return os << Input::pressStateToString(pressState);
+}
 
 #endif //INPUT_HPP
