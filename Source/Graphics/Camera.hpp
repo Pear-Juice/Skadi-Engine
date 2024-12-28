@@ -28,8 +28,7 @@ public:
         this->viewportHeight = viewportHeight;
         this->nearPlane = nearPlane;
         this->farPlane = farPlane;
-        this->ubo.view = transform;
-
+        setTransform(transform);
         regenerateUBO();
     }
 
@@ -60,7 +59,7 @@ public:
     }
 
     void setTransform(glm::mat4 transform) {
-        ubo.view = transform;
+        ubo.view = inverse(transform);
     }
 
     void setNearFar(float near, float far) {
