@@ -12,11 +12,11 @@ std::function<void(double xPos, double yPos)> Input::mouseMoveCallback;
 std::function<void(double xOffset, double yOffset)> Input::mouseScrollCallback;
 
 
- void Input::printActionMap(const ActionMap& actionMap) {
+ void Input::printKeyMap(const ActionMap& actionMap) {
     std::cout << "-- Dict --\n";
-    for (const Action& action : actionMap) {
+    for (const auto& [name, mapping] : actionMap) {
         std::cout << "Entry\n";
-        std::vector<Key> keys = action.mapping.keys;
+        std::vector<Key> keys = mapping.keys;
 
         for (int i = 0; i < keys.size(); i++) {
             std::cout << "Name: " << keyToString(keys[i]) << "\n";
@@ -24,11 +24,11 @@ std::function<void(double xOffset, double yOffset)> Input::mouseScrollCallback;
     }
 }
 
-void Input::printMouseActionMap(const MouseActionMap& actionMap) {
+void Input::printMouseMap(const MouseActionMap& actionMap) {
     std::cout << "-- Dict --\n";
-    for (const MouseAction& action : actionMap) {
+    for (const auto& [name, mapping] : actionMap) {
         std::cout << "Entry\n";
-        std::vector<Mouse> buttons = action.mapping.buttons;
+        std::vector<Mouse> buttons = mapping.buttons;
 
         for (int i = 0; i < buttons.size(); i++) {
             std::cout << "Name: " << mouseToString(buttons[i]) << "\n";
@@ -54,29 +54,40 @@ void Input::updateCallbacks() {
      {processMouseActions(MOUSE_NONE, RELEASED, MOD_NONE, xOffset, yOffset, type, mouseActionMap, *currentMouseData);};
  }
 
-void Input::addAction(std::string name, Key key) {
-     // If action list has action, append key to action
-     if (hasAction(name)) {
-         Action* action = getAction(name);
-         action->mapping.keys.push_back(key);
+void Input::addKeyMapping(std::string name, Key key) {
+     //If map has mapping, append key to mapping
+     if (hasKeyMapping(name)) {
+         KeyMapping* mapping = &actions[name];
+         mapping->keys.push_back(key);
+         updateCallbacks();
          return;
      }
+
+    if (keyLock) {
+        std::cout << "INPUT: Cannot add new key mapping, references would break";
+        return;
+    }
 
      //Create new action and append key
      KeyMapping mapping{};
      mapping.keys.push_back(key);
 
-     Action action{name, mapping};
-     actions.push_back(action);
+     actions[name] = mapping;
 
      updateCallbacks();
 }
 
-void Input::addAction(std::string name, std::vector<Key> keys) {
-     // If action list has action, append key to action
-     if (hasAction(name)) {
-         Action* action = getAction(name);
-         action->mapping.keys.insert(action->mapping.keys.begin(), keys.begin(), keys.end());
+void Input::addKeyMapping(std::string name, std::vector<Key> keys) {
+     //If map has mapping, append keys to mapping
+     if (hasKeyMapping(name)) {
+         KeyMapping* mapping = getKeyMapping(name);
+         mapping->keys.insert(mapping->keys.begin(), keys.begin(), keys.end());
+         updateCallbacks();
+         return;
+     }
+
+     if (keyLock) {
+         std::cout << "INPUT: Cannot add new key mapping, references would break";
          return;
      }
 
@@ -84,101 +95,105 @@ void Input::addAction(std::string name, std::vector<Key> keys) {
      KeyMapping mapping{};
      mapping.keys.insert(mapping.keys.begin(), keys.begin(), keys.end());
 
-     actions.emplace_back(name, mapping);
+     actions[name] = (name, mapping);
 
      updateCallbacks();
  }
 
-void Input::addMouseAction(std::string name, Mouse mouse) {
-    //If action list has action, append key to action
-     if (hasMouseAction(name)) {
-         MouseAction* action = getMouseAction(name);
-         action->mapping.buttons.push_back(mouse);
+void Input::addMouseMapping(std::string name, Mouse mouse) {
+     //If map has mapping, append button to mapping
+     if (hasMouseMapping(name)) {
+         MouseMapping* mapping = getMouseMapping(name);
+         mapping->buttons.push_back(mouse);
+         updateCallbacks();
          return;
      }
 
-     //Create new action and append key
+     if (mouseLock) {
+         std::cout << "INPUT: Cannot add new mouse mapping, references would break";
+         return;
+     }
+
+     //Create new mapping and append button
      MouseMapping mapping{};
      mapping.buttons.push_back(mouse);
 
-     mouseActions.emplace_back(name, mapping);
-
-     printMouseActionMap(mouseActions);
+     mouseActions[name] = mapping;
 
      updateCallbacks();
  }
 
-void Input::addMouseAction(std::string name, std::vector<Mouse> buttons) {
-    //If action list has action, append key to action
-     if (hasMouseAction(name)) {
-         MouseAction* action = getMouseAction(name);
-         action->mapping.buttons.insert(action->mapping.buttons.begin(), buttons.begin(), buttons.end());
+void Input::addMouseMapping(std::string name, std::vector<Mouse> buttons) {
+    //If map has mapping, append buttons to mapping
+     if (hasMouseMapping(name)) {
+         MouseMapping* mapping = getMouseMapping(name);
+         mapping->buttons.insert(mapping->buttons.begin(), buttons.begin(), buttons.end());
+         updateCallbacks();
          return;
      }
 
-     //Create new action and append key
+     if (mouseLock) {
+         std::cout << "INPUT: Cannot add new mouse mapping, references would break";
+         return;
+     }
+
+     //Create new mapping and append button
      MouseMapping mapping{};
      mapping.buttons.insert(mapping.buttons.begin(), buttons.begin(), buttons.end());
 
-     mouseActions.emplace_back(name, mapping);
+     mouseActions[name] = mapping;
 
      updateCallbacks();
  }
 
-bool Input::hasAction(std::string name) {
-    for (const Action& action : actions) {
-        if (action.name == name) {
-            return true;
-        }
-    }
+bool Input::hasKeyMapping(std::string name) {
+    return actions.contains(name);
+
+    // for (const Action& action : actions) {
+    //     if (action.name == name) {
+    //         return true;
+    //     }
+    // }
     return false;
 }
 
-bool Input::hasMouseAction(std::string name) {
-     for (const MouseAction& mouseAction : mouseActions) {
-         if (mouseAction.name == name) {
-             return true;
-         }
-     }
-     return false;
+bool Input::hasMouseMapping(std::string name) {
+     return mouseActions.contains(name);
  }
 
-Input::Action* Input::getAction(std::string name) {
-    for (Action& action : actions) {
-        if (action.name == name) {
-            return &action;
-        }
+Input::KeyMapping* Input::getKeyMapping(std::string name) {
+    if (hasKeyMapping(name)) {
+        keyLock = true;
+        return &actions[name];
     }
 
     return nullptr;
 }
 
-Input::MouseAction* Input::getMouseAction(std::string name) {
-    for (MouseAction& mouseAction : mouseActions) {
-        if (mouseAction.name == name) {
-            return &mouseAction;
-        }
-    }
+Input::MouseMapping* Input::getMouseMapping(std::string name) {
+     if (hasMouseMapping(name)) {
+         mouseLock = true;
+         return &mouseActions[name];
+     }
 
-    return nullptr;
+     return nullptr;
 }
 
-
-bool Input::removeAction(std::string name) {
-    std::erase_if( actions, [name](const Action &action){return action.name == name;} );
+bool Input::removeKeyMapping(std::string name) {
+     actions.erase(name);
      updateCallbacks();
-    return true;
+     return true;
 }
 
-bool Input::removeMouseAction(std::string name) {
-    std::erase_if( mouseActions, [name](const MouseAction &mouseAction){return mouseAction.name == name;} );
+bool Input::removeMouseMapping(std::string name) {
+     mouseActions.erase(name);
      updateCallbacks();
-    return true;
+     return true;
 }
 
 void Input::pushKeyCallback(std::string actionName, std::function<void(KeyData)> callback) {
-     if (const auto action = getAction(actionName)) {
-         action->mapping.callbacks.push_back(callback);
+     if (const auto& mapping = getKeyMapping(actionName)) {
+         mapping->callbacks.push_back(callback);
          updateCallbacks();
      }
      else {
@@ -188,8 +203,8 @@ void Input::pushKeyCallback(std::string actionName, std::function<void(KeyData)>
  }
 
 void Input::popKeyCallback(std::string actionName) {
-     if (const auto action = getAction(actionName)) {
-         action->mapping.callbacks.pop_back();
+     if (const auto mapping = getKeyMapping(actionName)) {
+         mapping->callbacks.pop_back();
          updateCallbacks();
      }
      else {
@@ -199,8 +214,8 @@ void Input::popKeyCallback(std::string actionName) {
 
 
 void Input::pushMouseCallback(std::string actionName, std::function<void(MouseData)> callback) {
-     if (const auto action = getMouseAction(actionName)) {
-         action->mapping.callbacks.push_back(callback);
+     if (const auto mapping = getMouseMapping(actionName)) {
+         mapping->callbacks.push_back(callback);
          updateCallbacks();
      }
      else {
@@ -209,8 +224,8 @@ void Input::pushMouseCallback(std::string actionName, std::function<void(MouseDa
  }
 
 void Input::popMouseCallback(std::string actionName) {
-     if (const auto action = getMouseAction(actionName)) {
-         action->mapping.callbacks.pop_back();
+     if (const auto mapping = getMouseMapping(actionName)) {
+         mapping->callbacks.pop_back();
          updateCallbacks();
      }
      else {

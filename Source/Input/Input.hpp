@@ -8,6 +8,7 @@
 
 #include <GLFW/glfw3.h>
 #include <ankerl/unordered_dense.h>
+#include "Source/Resources/Types.hpp"
 
 class Input {
 public:
@@ -70,37 +71,28 @@ public:
         std::vector<std::function<void(MouseData)>> callbacks;
     };
 
-    struct Action {
-        std::string name;
-        KeyMapping mapping;
-    };
-
-    struct MouseAction {
-        std::string name;
-        MouseMapping mapping;
-    };
-
     KeyData keyData;
     MouseData mouseData;
 
-    typedef std::vector<Action> ActionMap;
-    ActionMap actions;
+    typedef ankerl::unordered_dense::map<std::string,KeyMapping> ActionMap;
+    ankerl::unordered_dense::map<std::string, KeyMapping> actions;
 
-    typedef std::vector<MouseAction> MouseActionMap;
+    typedef ankerl::unordered_dense::map<std::string,MouseMapping> MouseActionMap;
     MouseActionMap mouseActions;
-    void addAction(std::string name, Key key);
-    void addAction(std::string name, std::vector<Key> keys);
-    bool hasAction(std::string name);
-    Action* getAction(std::string name);
-    bool removeAction(std::string);
-    void printActionMap(const ActionMap& actionMap);
 
-    void addMouseAction(std::string name, Mouse button);
-    void addMouseAction(std::string name, std::vector<Mouse> buttons);
-    bool hasMouseAction(std::string name);
-    MouseAction* getMouseAction(std::string);
-    bool removeMouseAction(std::string);
-    void printMouseActionMap(const MouseActionMap& mouseActionMap);
+    void addKeyMapping(std::string name, Key key);
+    void addKeyMapping(std::string name, std::vector<Key> keys);
+    bool hasKeyMapping(std::string name);
+    KeyMapping* getKeyMapping(std::string name);
+    bool removeKeyMapping(std::string);
+    void printKeyMap(const ActionMap& actionMap);
+
+    void addMouseMapping(std::string name, Mouse button);
+    void addMouseMapping(std::string name, std::vector<Mouse> buttons);
+    bool hasMouseMapping(std::string name);
+    MouseMapping* getMouseMapping(std::string);
+    bool removeMouseMapping(std::string);
+    void printMouseMap(const MouseActionMap& mouseActionMap);
 
     void pushKeyCallback(std::string actionName, std::function<void(KeyData)> callback);
     void popKeyCallback(std::string actionName);
@@ -115,6 +107,8 @@ public:
 
 private:
     void updateCallbacks();
+    bool keyLock = false;
+    bool mouseLock = false;
     static void processKeyActions(Key key, PressState pressState, Mod mod, ActionMap &actionMap, KeyData &keyData);
     static void processMouseActions(Mouse button, PressState pressState, Mod mod, double xPos, double yPos, std::string type, MouseActionMap &mouseActionMap, MouseData &mouseData);
 };
