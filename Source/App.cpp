@@ -77,18 +77,9 @@ App::App(std::string projectDirectory) {
 	input.addKeyMapping("Right", {Input::KEY_D, Input::RIGHT_ARROW});
 	input.addKeyMapping("Forward", {Input::KEY_W, Input::UP_ARROW});
 	input.addKeyMapping("Backward", {Input::KEY_S, Input::DOWN_ARROW});
-	input.addKeyMapping("MoveLeft", Input::KEY_Q);
-	input.addKeyMapping("MoveRight", Input::KEY_E);
+	input.addKeyMapping("RotLeft", Input::KEY_Q);
+	input.addKeyMapping("RotRight", Input::KEY_E);
 	input.addKeyMapping("Flip", Input::KEY_F);
-
-	auto upAction = input.getKeyMapping("Up");
-	auto downAction = input.getKeyMapping("Down");
-	auto forwardAction = input.getKeyMapping("Forward");
-	auto backAction = input.getKeyMapping("Backward");
-	auto leftAction = input.getKeyMapping("Left");
-	auto rightAction = input.getKeyMapping("Right");
-	auto moveLeftAction = input.getKeyMapping("MoveLeft");
-	auto moveRightAction = input.getKeyMapping("MoveRight");
 
 	float flyspeed = 0.2f;
 	float turnspeed = 0.02f;
@@ -106,46 +97,21 @@ App::App(std::string projectDirectory) {
 				flip = 1;
 	});
 
+	auto origin_time = std::chrono::steady_clock::now();
 
 	while (true) {
 		auto start = std::chrono::steady_clock::now();
 
-		glm::vec3 moveDir(0);
-		int rotateDir = 0;
-		if (leftAction->data.pressState == Input::PRESSED || leftAction->data.pressState == Input::HELD) {
-			rotateDir = -1;
-		}
+		Vector2 planeAxis = input.getKeyAxis("Left", "Right", "Forward", "Backward");
+		int vertAxis = input.getKeyAxis("Down","Up");
+		int rotAxis = -input.getKeyAxis("RotLeft", "RotRight");
 
-		if (rightAction->data.pressState == Input::PRESSED || rightAction->data.pressState == Input::HELD) {
-			rotateDir = 1;
-		}
+		Vector3 moveDir(planeAxis.x, vertAxis, planeAxis.y);
+		std::cout << moveDir << "\n";
 
-		if (upAction->data.pressState == Input::PRESSED || upAction->data.pressState == Input::HELD) {
-			moveDir =  glm::vec3(0,-flyspeed,0);
-		}
 
-		if (downAction->data.pressState == Input::PRESSED || downAction->data.pressState == Input::HELD) {
-			moveDir = glm::vec3(0,flyspeed,0);
-		}
-
-		if (forwardAction->data.pressState == Input::PRESSED || forwardAction->data.pressState == Input::HELD) {
-			moveDir = glm::vec3(0,-0,flyspeed);
-		}
-
-		if (backAction->data.pressState == Input::PRESSED || backAction->data.pressState == Input::HELD) {
-			moveDir =  glm::vec3(0,0,-flyspeed);
-		}
-
-		if (moveLeftAction->data.pressState == Input::PRESSED || moveLeftAction->data.pressState == Input::HELD) {
-			moveDir = glm::vec3(flyspeed,00,0);
-		}
-
-		if (moveRightAction->data.pressState == Input::PRESSED || moveRightAction->data.pressState == Input::HELD) {
-			moveDir =  glm::vec3(-flyspeed,0,0);
-		}
-
-		camPosMat = translate(camPosMat, -moveDir * flyspeed);
-		camPosMat = rotate(camPosMat, -rotateDir * turnspeed, glm::vec3(0,1,0));
+		camPosMat = translate(camPosMat, moveDir.glm() * flyspeed);
+		camPosMat = rotate(camPosMat, rotAxis * turnspeed, glm::vec3(0,1,0));
 
 		if (flip) {
 			rend.updateMeshTransform(meshes[0].id, camPosMat);
@@ -158,6 +124,7 @@ App::App(std::string projectDirectory) {
 
 		auto total_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(end-start).count();
 
+		//DO not but any code after this line
 		if (total_elapsed_millis < 16) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(16 - total_elapsed_millis)));
 		}
