@@ -15,6 +15,11 @@ struct Vector2 {
 		this->y = y;
 	}
 
+	Vector2(const float scalar) {
+		x = scalar;
+		y = scalar;
+	}
+
 	Vector2(const Vector2 &vec2) {
 		x = vec2.x;
 		y = vec2.y;
@@ -94,6 +99,12 @@ struct Vector3 {
 		this->x = x;
 		this->y = y;
 		this->z = z;
+	}
+
+	Vector3(const float scalar) {
+		x = scalar;
+		y = scalar;
+		z = scalar;
 	}
 
 	//Vector constuctors
@@ -198,17 +209,19 @@ inline std::ostream& operator << (std::ostream& os, const Vector3& vec) {
 struct Vector4 {
 	float x, y, z, w;
 
-	//Accessors
-	Vector2 xy() const {
-		return Vector2(x,y);
-	}
-
 	//Default constructor
 	Vector4(const float x, const float y, const float z, const float w) {
 		this->x = x;
 		this->y = y;
 		this->z = z;
 		this->w = w;
+	}
+
+	Vector4(const float scalar) {
+		x = scalar;
+		y = scalar;
+		z = scalar;
+		w = scalar;
 	}
 
 	//Vector2 constructors
@@ -253,6 +266,11 @@ struct Vector4 {
 		y = vec3.x;
 		z = vec3.y;
 		w = vec3.z;
+	}
+
+	//Accessors
+	Vector2 xy() const {
+		return Vector2(x,y);
 	}
 
 	Vector2 yz() const {
