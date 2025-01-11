@@ -3,8 +3,7 @@
 #include "Graphics/Rend.hpp"
 #include "Graphics/Vertex.hpp"
 #include "Resources/Loader.hpp"
-#include "Resources/Nodes/Node.hpp"
-#include "Source/Input/Input.hpp"
+#include "Input/Input.hpp"
 
 #include <array>
 #include <cstdint>
@@ -84,8 +83,7 @@ App::App(std::string projectDirectory) {
 	float flyspeed = 0.2f;
 	float turnspeed = 0.02f;
 
-	glm::mat4 camRotMat(1);
-	glm::mat4 camPosMat(1);
+	glm::mat4 camMat(1);
 
 	int flip = 0;
 
@@ -107,17 +105,15 @@ App::App(std::string projectDirectory) {
 		int rotAxis = -input.getKeyAxis("RotLeft", "RotRight");
 
 		Vector3 moveDir(planeAxis.x, vertAxis, planeAxis.y);
-		std::cout << moveDir << "\n";
 
-
-		camPosMat = translate(camPosMat, moveDir.glm() * flyspeed);
-		camPosMat = rotate(camPosMat, rotAxis * turnspeed, glm::vec3(0,1,0));
+		camMat = translate(camMat, moveDir.glm() * flyspeed);
+		camMat = rotate(camMat, rotAxis * turnspeed, glm::vec3(0,1,0));
 
 		if (flip) {
-			rend.updateMeshTransform(meshes[0].id, camPosMat);
+			rend.updateMeshTransform(meshes[0].id, camMat);
 		}
 		else {
-			rend.camera.setTransform(camPosMat);
+			rend.camera.setTransform(camMat);
 		}
 
 		auto end = std::chrono::steady_clock::now();

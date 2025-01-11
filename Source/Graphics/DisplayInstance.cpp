@@ -193,18 +193,38 @@ DisplayInstance::QueueFamilyIndecies DisplayInstance::findQueueFamilies(VkPhysic
 }
 
 void DisplayInstance::windowKeyCallback(GLFWwindow* window, int keyCode, int scancode, int pressed, int mods) {
+	if (pressed == 2) return;
+
+	Input::PressState inputPressState;
+	switch (pressed) {
+		case 0:
+			inputPressState = Input::JUST_RELEASED; break;
+		case 1:
+			inputPressState = Input::JUST_PRESSED; break;
+		default:
+			inputPressState = Input::NONE;
+	}
+
     auto inputKey = static_cast<Input::Key>(keyCode);
-	auto inputPressState = static_cast<Input::PressState>(pressed);
     auto inputMod = static_cast<Input::Mod>(mods);
 
-	if (Input::keyCallback)
-		Input::keyCallback(inputKey, inputPressState, inputMod);
+	Input::keyCallback(inputKey, inputPressState, inputMod);
 }
 
 void DisplayInstance::windowMouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
-    // std::cout << Input::keyToString(static_cast<Input::Key>(button)) << ": " << action << " mods: " << Input::modToString(static_cast<Input::Mod>(mods)) <<"\n";
+    // std::cout << Input::keyToString(static_cast<Input::Key>(button)) << ": " << action << " mods: " << Input::modToString(static_cast<Input::Mod>(mods)) <<"\n";if (pressed == 2) return;
+
+	Input::PressState inputPressState;
+	switch (action) {
+		case 0:
+			inputPressState = Input::JUST_RELEASED; break;
+		case 1:
+			inputPressState = Input::JUST_PRESSED; break;
+		default:
+			inputPressState = Input::NONE;
+	}
+
 	auto inputMouseButton = static_cast<Input::Mouse>(button);
-	auto inputPressState = static_cast<Input::PressState>(action);
     auto inputMod = static_cast<Input::Mod>(mods);
 
 	if (Input::mouseClickCallback)

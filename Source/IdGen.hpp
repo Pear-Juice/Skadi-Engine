@@ -13,7 +13,6 @@ class IDGen {
 public:
     std::mutex countMutex;
 
-
     static uuids::uuid genID() {
 
         std::random_device rd;

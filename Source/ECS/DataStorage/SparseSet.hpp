@@ -1,7 +1,3 @@
-//
-// Created by blankitte on 1/3/25.
-//
-
 #ifndef SPARSESET_HPP
 #define SPARSESET_HPP
 #include <iostream>
@@ -87,8 +83,8 @@ public:
 	///get an element with an id
 	T get(const uint32_t id) {
 		if (id >= maxElements) return T();
-
-		return dense[sparse[id]].val;
+		auto val = dense[sparse[id]].val;
+		return val;
 	}
 
 	///get if set contains an id

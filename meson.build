@@ -9,7 +9,9 @@ sources = ['Launch.cpp',
             'Source/Graphics/DisplayInstance.cpp',
             'Source/Graphics/ResourceManager.cpp',
             'Source/Resources/Loader.cpp',
-            'Source/Input/Input.cpp']
+            'Source/Input/Input.cpp',
+            'Source/ECS/EntityManager.cpp',
+            'Test/Tests.cpp']
 
 #dep_spirv = meson.get_compiler('cpp').find_library('SPIRV')
 deps = [dependency('vulkan'), dependency('glfw3'), dependency('assimp'), dependency('unordered_dense')]
