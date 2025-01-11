@@ -10,6 +10,11 @@ struct Vector2 {
 	float x, y;
 
 	//Default constructor
+	Vector2() {
+		x = 0;
+		y = 0;
+	}
+
 	Vector2(const float x, const float y) {
 		this->x = x;
 		this->y = y;
@@ -94,6 +99,12 @@ inline std::ostream& operator << (std::ostream& os, const Vector2& vec) {
 
 struct Vector3 {
 	float x = 0, y = 0, z = 0;
+
+	Vector3() {
+		x = 0;
+		y = 0;
+		z = 0;
+	}
 
 	Vector3(const float x, const float y, const float z) {
 		this->x = x;
@@ -208,6 +219,13 @@ inline std::ostream& operator << (std::ostream& os, const Vector3& vec) {
 
 struct Vector4 {
 	float x, y, z, w;
+
+	Vector4() {
+		x = 0;
+		y = 0;
+		z = 0;
+		w = 0;
+	}
 
 	//Default constructor
 	Vector4(const float x, const float y, const float z, const float w) {
