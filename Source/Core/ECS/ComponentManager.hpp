@@ -11,9 +11,10 @@
 #include <optional>
 #include <queue>
 #include <variant>
+#include <Source/Core/Messaging/Lambda.hpp>
 
 #include "Types.hpp"
-#include "DataStorage/SparseSet.hpp"
+#include "Source/Core/DataStorage/SparseSet.hpp"
 
 class ComponentManager {
 public:

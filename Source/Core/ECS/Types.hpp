@@ -2,7 +2,7 @@
 #define TYPES_HPP
 
 #include <cstdint>
-#include "DataStorage/SparseSet.hpp"
+#include "Source/Core/DataStorage/SparseSet.hpp"
 
 using Entity = uint32_t;
 constexpr uint32_t COMPONENT_COUNT = 32;
