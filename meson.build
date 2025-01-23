@@ -10,7 +10,7 @@ sources = ['Launch.cpp',
             'Source/Graphics/ResourceManager.cpp',
             'Source/Resources/Loader.cpp',
             'Source/Input/Input.cpp',
-            'Source/ECS/EntityManager.cpp',
+            'Source/Core/ECS/EntityManager.cpp',
             'Test/Tests.cpp']
 
 #dep_spirv = meson.get_compiler('cpp').find_library('SPIRV')

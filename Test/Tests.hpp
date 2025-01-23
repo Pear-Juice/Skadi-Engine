@@ -44,8 +44,15 @@ public:
 	static void testSparseSetPerformance();
 	static void testSparseSetStructHierarchy();
 
-	static void test(int a, std::string b);
+	static void testLambdaFunc1(int a, std::string b);
+	static void testLambdaFunc2(int a, std::string b);
+	static void testLambdaFunc3(int &a, std::string &b);
+
+	static void testMessaging();
 	static void testLambda();
+	static void testEvent();
+	static void testOnceEvent();
+	static void testLambdaPerformance();
 
 	static void testAll();
 };

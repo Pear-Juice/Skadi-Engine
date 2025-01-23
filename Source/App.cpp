@@ -18,13 +18,6 @@
 void initRend(Rend &renderer) {
 	renderer.initVulkan();
 	renderer.beginLoop();
-
-	// try {
-	//
- //  	} catch (const std::exception &e) {
- //    	std::cerr << e.what() << std::endl;
-	// }
-
 }
 
 void printMatrix(glm::mat4 mat) {
@@ -87,12 +80,9 @@ App::App(std::string projectDirectory) {
 
 	int flip = 0;
 
-	input.pushKeyCallback("Flip", [&flip](auto keyData) mutable {
-		if (keyData.pressState == 1)
-			if (flip)
-				flip = 0;
-			else
-				flip = 1;
+	input.getKeyEvent("Flip").add([&flip](Input::KeyData keyData) mutable {
+		if (keyData.pressState == Input::JUST_PRESSED)
+			flip = !flip;
 	});
 
 	auto origin_time = std::chrono::steady_clock::now();

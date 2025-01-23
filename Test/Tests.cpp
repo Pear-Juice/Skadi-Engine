@@ -3,44 +3,26 @@
 #include <assert.h>
 #include <Source/Resources/Vector.hpp>
 
-#include "Source/ECS/ECS.hpp"
-
-#include "Source/ECS/Messaging/Event.hpp"
-
-void Test::test(int a, std::string b) {
-	std::cout << "Call: " << a << " " << b << "\n";
-}
+#include "Source/Core/ECS/ECS.hpp"
+#include "Source/Core/DataStorage/SparseSet.hpp"
+#include "Source/Core/Messaging/Event.hpp"
+#include "Source/Core/Messaging/Lambda.hpp"
 
 void Test::testAll() {
 	std::cout << "---Test All---\n";
 
 	testECS();
-
-	Lambda lambda(test);
-	lambda.call(15, "Booop");
+	testMessaging();
 
 	std::cout << "---Success---\n";
 }
 
 void Test::testSparseSet() {
-	SparseSet<std::string> set(100);
-
-	// set.add(50, "A");
-	// set.add(30, "B");
-	// set.add(20, "C");
-	// set.add(10, "D");
-	//
-	// set.del(20);
-	//
-	// set.print();
-
-
 	testSparseSetAddRetrieve();
 	testSparseSetDelete();
 	testSparseSetAssign();
 	testSparseSetClear();
 	testSparseSetStructHierarchy();
-	// testSparseSetPerformance();
 }
 
 void Test::testSparseSetAddRetrieve() {
@@ -52,7 +34,6 @@ void Test::testSparseSetAddRetrieve() {
 	set.add(3,"I");
 	set.add(4,"Am");
 	set.add(5,"Sheep");
-
 
 	for (int i = 0; i < set.size(); i++) {
 		assert(set.dense[i].val == sheepCase[i]);
@@ -474,3 +455,208 @@ void Test::testSignatureConversion() {
 
 	assert(types == typesRes);
 }
+
+void Test::testLambdaFunc1(int a, std::string b) {
+	assert(a == -20 && b == "Lambda1");
+}
+
+void Test::testLambdaFunc2(int a, std::string b) {
+	a = 500;
+	b = "Bonkbonk";
+}
+
+void Test::testLambdaFunc3(int &a, std::string &b) {
+	a = 100;
+	b = "Bark";
+}
+
+void Test::testMessaging() {
+	testLambda();
+	testEvent();
+	testOnceEvent();
+	// testLambdaPerformance();
+}
+
+void Test::testLambda() {
+	int a = 10;
+	std::string b = "Woof";
+
+	//Capture and change A and B
+	Lambda lambda([&a,&b]() {
+		a = 200;
+		b = "Goof";
+	});
+
+	lambda.call();
+	assert(a == 200 && b == "Goof");
+
+	Lambda lambda2(testLambdaFunc3);
+	lambda2.call(a, b);
+
+	assert(a == 100 && b == "Bark");
+
+	struct Container {
+		Lambda<std::function<void(int)>> lambda;
+	};
+
+	auto lamb = Lambda<std::function<void(int)>>([](int a){assert(a == -500);});
+	auto lamb2 = Lambda<std::function<void(int)>>([](int a){assert(a == 300);});
+	Container container{lamb};
+	container.lambda.call(-500);
+
+	// container.lambda = lamb2;
+	// container.lambda = lamb;
+
+}
+
+void Test::testEvent() {
+	Event<void(int)> event;
+
+	int g = -5;
+	int callCount = 0;
+
+	event.add({[g, &callCount](int a) {
+		assert(a * g == -75);
+		callCount++;
+	}});
+
+	event.add({[&callCount](int a) {
+		assert(a * 10 == 150);
+		callCount++;
+	}});
+
+	event.add({[&callCount](int a) {
+		assert(a * 100 == 1500);
+		callCount++;
+	}});
+
+	event.call(15);
+	assert(callCount==3);
+
+	event.remove();
+	callCount = 0;
+
+	event.call(15);
+	assert(callCount == 2);
+
+	event.remove();
+	event.remove();
+	callCount = 0;
+
+	event.call(100);
+	assert(callCount == 0);
+
+	int change = 10;
+	event.add({[&callCount, &change](int mod) {
+		change *= mod;
+		callCount ++;
+	}});
+
+	event.call(5);
+	event.call(10);
+	event.call((20));
+
+	assert(callCount == 3 && change == 10000);
+
+	Event<void(int, std::string)> eventMixed;
+
+	eventMixed.add({[](int x, std::string y) {
+		assert(x == -20 && y == "Lambda1");
+	}});
+	eventMixed.add({testLambdaFunc1});
+
+	eventMixed.call(-20, "Lambda1");
+
+	Event<void(int &a, std::string &b)> refEvent;
+	refEvent.add({testLambdaFunc3});
+
+	int a = 0;
+	std::string b = "";
+
+	refEvent.call(a, b);
+
+	assert(a == 100 && b == "Bark");
+
+	//Test copying and containing of an event
+	struct EventContainer {
+		Event<void(int)> event;
+	} container;
+
+	a = 10;
+	container.event.add([&a](int b){ a *= b; });
+
+	container.event.call(15);
+
+	assert(a == 150);
+
+	EventContainer container2;
+	container2.event = container.event;
+	container2.event.call(100);
+
+	assert(a == 15000);
+}
+
+void Test::testOnceEvent() {
+	Event<void()> event;
+	int a = 0;
+	event.addOnce({[&a](){ a = 100;}});
+
+	event.call();
+	assert(a == 100);
+	a = 0;
+
+	event.call();
+	assert(a == 0);
+}
+
+void testLambdaNormalFunc(int&a) {
+	a*=10;
+}
+
+void Test::testLambdaPerformance() {
+	int a = 0;
+	auto anonymous = [&a]() {
+		a *= 10;
+	};
+
+	Lambda fastLambda(testLambdaNormalFunc);
+
+	Lambda lambda = [&a]() {
+		a *= 10;
+	};
+
+	Stopwatch stopwatch;
+	stopwatch.start();
+	int n = 100000;
+
+	for (int i = 0; i < n; i++) {
+		testLambdaNormalFunc(a);
+	}
+	std::cout << "Normal: " << stopwatch.click() << "\n";
+	a = 0;
+	stopwatch.start();
+
+	for (int i = 0; i < n; i++) {
+		anonymous();
+	}
+
+	std::cout << "Anonymous: " << stopwatch.click() << "\n";
+	a = 0;
+	stopwatch.start();
+
+	for (int i = 0; i < n; i++) {
+		fastLambda.call(a);
+	}
+
+	std::cout << "Pointer Lambda: " << stopwatch.click() << "\n";
+	a = 0;
+	stopwatch.start();
+
+	for  (int i = 0; i < n; i++) {
+		lambda.call();
+	}
+
+	std::cout << "Lambda: " << stopwatch.click() << "\n";
+	a = 0;
+}
+
