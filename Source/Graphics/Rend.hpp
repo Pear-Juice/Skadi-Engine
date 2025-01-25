@@ -53,11 +53,13 @@ class Rend {
 		std::mutex meshRenderMutex;
 
 		std::queue<Mesh> meshQueue;
+		std::queue<uuids::uuid> meshEraseQueue;
 		std::queue<Material> materialQueue;
 		std::unordered_map<uuids::uuid, VulkMesh> vulkMeshes;
 		std::unordered_map<uuids::uuid, VulkMaterial> vulkMaterials;
 
 		void processMeshQueue();
+		void processMeshEraseQueue();
 		void processMaterialQueue();
 
 		VkSwapchainKHR swapChain;
@@ -93,16 +95,6 @@ class Rend {
 		std::vector<VkBuffer> uniformBuffers;
 		std::vector<VkDeviceMemory> uniformBuffersMemory;
 		std::vector<void*> uniformBuffersMapped;
-
-		//VkBuffer stagingBuffer;
-		//VkDeviceMemory stagingBufferMemory;
-		//uint32_t mipLevels;
-		//VkImage textureImage;
-		//VkDeviceMemory textureImageMemory;
-		//VkImageView textureImageView;
-		//VkSampler textureSampler;
-
-		//VkSampleCountFlagBits msaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 		VkDescriptorPool descriptorPool;
 		std::vector<VkDescriptorSet> descriptorSets;

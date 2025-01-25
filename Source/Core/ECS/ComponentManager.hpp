@@ -10,11 +10,9 @@
 #include <functional>
 #include <optional>
 #include <queue>
-#include <variant>
-#include <Source/Core/Messaging/Lambda.hpp>
 
-#include "Types.hpp"
 #include "Source/Core/DataStorage/SparseSet.hpp"
+#include "Definitions.hpp"
 
 class ComponentManager {
 public:
@@ -25,8 +23,8 @@ public:
 
 	uint32_t maxEntities;
 
-	ComponentManager(const uint32_t maxEntities, const uint32_t maxComponents) : componentData(maxComponents), maxEntities(maxEntities) {
-		for (int i = 0; i < maxComponents; i++) {
+	ComponentManager(const uint32_t maxEntities) : componentData(MAX_COMPONENTS), maxEntities(maxEntities) {
+		for (int i = 0; i < MAX_COMPONENTS; i++) {
 			freeComponentTypes.push(i);
 		}
 	}
@@ -64,7 +62,10 @@ public:
 	template<typename T>
 	SparseSet<T>* getComponents() {
 		std::optional<ComponentType> type = getComponentType<T>();
-		if (!type) return nullptr;
+		if (!type) {
+			registerComponentType<T>();
+			type = getComponentType<T>();
+		};
 
 		char* data = componentData.get(type.value());
 		return reinterpret_cast<SparseSet<T>*>(data);
@@ -156,7 +157,7 @@ public:
 		componentTypes.reserve(signature.count());
 
 		Signature mask = 1;
-		for (uint32_t i = 0; i < COMPONENT_COUNT; ++i) {
+		for (uint32_t i = 0; i < MAX_COMPONENTS; ++i) {
 			if ((mask & signature).any())
 				componentTypes.push_back(i);
 

@@ -4,6 +4,8 @@
 
 #include <GLFW/glfw3.h>
 #include <ankerl/unordered_dense.h>
+#include <Source/Core/Messaging/Event.hpp>
+
 #include "Source/Resources/Types.hpp"
 
 class Input {
@@ -36,6 +38,9 @@ public:
     static std::string pressStateToString(PressState pressState);
 
     struct KeyData {
+        KeyData(){}
+        KeyData(const KeyData &keyData) : actionName(keyData.actionName), key(keyData.key), mod(keyData.mod), pressState(keyData.pressState), prevPressState(keyData.prevPressState), justPressTimestamp(keyData.justPressTimestamp), justReleaseTimestamp(keyData.justReleaseTimestamp) {}
+
         std::string actionName;
         Key key = KEY_NONE;
         Mod mod = MOD_NONE;
@@ -66,13 +71,13 @@ public:
     struct KeyMapping {
         std::vector<Key> keys;
         KeyData data;
-        std::vector<std::function<void(KeyData)>> callbacks;
+        Event<void(KeyData)> event;
     };
 
     struct MouseMapping {
         std::vector<Mouse> buttons;
         MouseData data;
-        std::vector<std::function<void(MouseData)>> callbacks;
+        Event<void(MouseData)> event;
     };
 
     KeyData keyData;
@@ -101,6 +106,9 @@ public:
     MouseMapping* getMouseMapping(std::string, bool updatePressState = true);
     bool removeMouseMapping(std::string);
     void printMouseMap(const MouseActionMap& mouseActionMap);
+
+    Event<void(KeyData)>& getKeyEvent(std::string name);
+    Event<void(MouseData)>& getMouseEvent(std::string name);
 
     void pushKeyCallback(std::string actionName, std::function<void(KeyData)> callback);
     void popKeyCallback(std::string actionName);

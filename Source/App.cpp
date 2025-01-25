@@ -15,6 +15,8 @@
 #include <thread>
 #include <chrono>
 
+#include "Core/ECS/Scene.hpp"
+
 void initRend(Rend &renderer) {
 	renderer.initVulkan();
 	renderer.beginLoop();
@@ -43,7 +45,7 @@ App::App(std::string projectDirectory) {
 
 	initRend(rend);
 
-	std::string modelPath = "/home/blankitte/Documents/Engines/SkadiEngine/Models/Cube.glb";
+	std::string modelPath = "/home/blankitte/Documents/Engines/SkadiEngine/Models/Scene.glb";
 	Loader loader;
 	auto [meshes, materials] = loader.loadModels(modelPath);
 
@@ -51,15 +53,18 @@ App::App(std::string projectDirectory) {
 		rend.registerMaterial(material);
 	}
 
+	Scene scene(10);
+
+	SparseSet<Mesh>* meshComponents = scene.componentManager.getComponents<Mesh>();
 	for (auto& mesh : meshes) {
-	 	rend.renderMesh(mesh);
-	    std::cout << "Render " << mesh.id << "\n";
+		Entity box = scene.entityManager.allocEntity();
+		meshComponents->add(box, mesh);
 	}
+
+	scene.enter(rend);
 
 	end = std::chrono::steady_clock::now();
 	auto elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(end-start);
-	std::chrono::duration<double> elapsed_seconds = end - start;
-	std::cout << "Init time: " << elapsed_seconds.count() << "\n";
 	std::cout << "Init time millis: " << elapsed_millis.count() << "\n";
 
 	Input input;

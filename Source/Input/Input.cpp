@@ -94,7 +94,7 @@ void Input::addKeyMapping(std::string name, std::vector<Key> keys) {
      KeyMapping mapping{};
      mapping.keys.insert(mapping.keys.begin(), keys.begin(), keys.end());
 
-     actions[name] = (name, mapping);
+     actions[name] = mapping;
 
      updateCallbacks();
  }
@@ -222,46 +222,12 @@ bool Input::removeMouseMapping(std::string name) {
      return true;
 }
 
-void Input::pushKeyCallback(std::string actionName, std::function<void(KeyData)> callback) {
-     if (const auto& mapping = getKeyMapping(actionName)) {
-         mapping->callbacks.push_back(callback);
-         updateCallbacks();
-     }
-     else {
-         std::cout << "SKADI: Failed to push callback, matching action does not exist\n";
-     }
-
+Event<void(Input::KeyData)>& Input::getKeyEvent(std::string name) {
+     return getKeyMapping(name, false)->event;
  }
 
-void Input::popKeyCallback(std::string actionName) {
-     if (const auto mapping = getKeyMapping(actionName)) {
-         mapping->callbacks.pop_back();
-         updateCallbacks();
-     }
-     else {
-         std::cout << "SKADI: Failed to pop callback, matching action does not exist\n";
-     }
- }
-
-
-void Input::pushMouseCallback(std::string actionName, std::function<void(MouseData)> callback) {
-     if (const auto mapping = getMouseMapping(actionName)) {
-         mapping->callbacks.push_back(callback);
-         updateCallbacks();
-     }
-     else {
-         std::cout << "SKADI: Failed to push callback, matching mouse action does not exist\n";
-     }
- }
-
-void Input::popMouseCallback(std::string actionName) {
-     if (const auto mapping = getMouseMapping(actionName)) {
-         mapping->callbacks.pop_back();
-         updateCallbacks();
-     }
-     else {
-         std::cout << "SKADI: Failed to pop callback, matching mouse action does not exist\n";
-     }
+Event<void(Input::MouseData)>& Input::getMouseEvent(std::string name) {
+     return getMouseMapping(name, false)->event;
  }
 
 void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod, ActionMap &actionMap, KeyData &keyData) {
@@ -281,9 +247,7 @@ void Input::processKeyActions(Key inputKey, PressState pressState, Mod inputMod,
                 data.actionName = name;
                 mapping.data = data;
 
-                for (const auto& func : mapping.callbacks) {
-                    func(data);
-                }
+                mapping.event.call(data);
 
                 // std::cout << "Press " << keyToString(inputKey) << " " << pressStateToString(pressState) << " Prev: " << pressStateToString(mapping.data.prevPressState) << "\n";
             }
@@ -327,9 +291,7 @@ void Input::processMouseActions(Mouse inputButton, PressState pressState, Mod mo
                  mouseData.actionName = name;
                  mapping.data = mouseData;
 
-                 for (const auto& func : mapping.callbacks) {
-                     func(mouseData);
-                 }
+                 mapping.event.call(mouseData);
              }
          }
      }

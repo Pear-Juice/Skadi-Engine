@@ -3,7 +3,7 @@
 
 #include "ComponentManager.hpp"
 #include "EntityManager.hpp"
-#include "Types.hpp"
+#include "Scene.hpp"
 
 #endif //ECS_HPP
 

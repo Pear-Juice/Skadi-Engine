@@ -63,6 +63,11 @@ void Rend::mainLoop() {
 		glfwPollEvents();
 		drawFrame();
 
+
+		processMaterialQueue();
+		processMeshQueue();
+		processMeshEraseQueue();
+
 		auto end = std::chrono::steady_clock::now();
 		auto frame_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(end-start).count();
 
@@ -71,10 +76,7 @@ void Rend::mainLoop() {
 		}
 
 		//Uncomment to print render time
-		// auto total_end = std::chrono::steady_clock::now();
-		// auto total_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(total_end-start).count();
-
-		// std::cout << total_elapsed_millis << "\n";
+		std::cout << frame_elapsed_millis << "\n";
 	}
 
 	vkDeviceWaitIdle(device);
@@ -136,11 +138,7 @@ void Rend::updateMesh(Mesh mesh) {
 }
 
 void Rend::eraseMesh(uuids::uuid uuid) {
-	auto &mesh = vulkMeshes[uuid];
-	resourceManager->destroyTransferBuffer(mesh.indexBuffer);
-	resourceManager->destroyTransferBuffer(mesh.vertexBuffer);
-
-	vulkMeshes.erase(uuid);
+	meshEraseQueue.push(uuid);
 }
 
 //Change to material that has list of textures
@@ -217,6 +215,23 @@ void Rend::processMeshQueue() {
 		meshQueue.pop();
 	}
 }
+
+void Rend::processMeshEraseQueue() {
+	if (!meshEraseQueue.empty())
+		std::cout << "REND: Erasing " << meshEraseQueue.size() << " meshes\n";
+	while (!meshEraseQueue.empty()) {
+		uuids::uuid meshID = meshEraseQueue.front();
+
+		auto &mesh = vulkMeshes[meshID];
+		resourceManager->destroyTransferBuffer(mesh.indexBuffer);
+		resourceManager->destroyTransferBuffer(mesh.vertexBuffer);
+
+		vulkMeshes.erase(meshID);
+
+		meshEraseQueue.pop();
+	}
+}
+
 
 ///Searches available swap formats for SRGB 32 bit and returns it if it exits
 ///If not it chooses the first available format
@@ -737,7 +752,7 @@ void Rend::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageInde
 	renderPassInfo.renderArea.extent = swapChainExtent;
 
 	std::array<VkClearValue, 2> clearValues{};
-	clearValues[0].color = {{1.0f, 0.0f, 0.0f, 1.0f}};
+	clearValues[0].color = {{1.0f, 1.0f, 1.0f, 1.0f}};
 	clearValues[1].depthStencil = {1.0f, 0};
 	renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
 	renderPassInfo.pClearValues = clearValues.data();
@@ -858,8 +873,6 @@ void Rend::drawFrame() {
 
 	frame = (frame + 1) % MAX_FRAMES_IN_FLIGHT;
 
-	processMaterialQueue();
-	processMeshQueue();
 }
 
 void Rend::updateUniformBuffer(UniformBufferObject ubo) {

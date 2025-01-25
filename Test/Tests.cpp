@@ -226,7 +226,7 @@ void Test::testECS() {
 	testComponentManagerOperate();
 
 	EntityManager entityManager(5000);
-	ComponentManager componentManager(5000,32);
+	ComponentManager componentManager(5000);
 
 	Entity player = entityManager.allocEntity();
 	Entity enemy1 = entityManager.allocEntity();
@@ -321,7 +321,7 @@ void Test::testEntityManagerGetEntities() {
 }
 
 void Test::testComponentManager() {
-	ComponentManager componentManager(500, 32);
+	ComponentManager componentManager(500);
 	struct Gun {
 		uint32_t ammo;
 	};
@@ -366,7 +366,7 @@ void Test::testEntityComponent() {
 	uint32_t componentCount = 32;
 
 	EntityManager entityManager(entityCount);
-	ComponentManager componentManager(entityCount, componentCount);
+	ComponentManager componentManager(entityCount);
 
 	struct Health {
 		float value = 10;
@@ -406,7 +406,7 @@ void Test::testEntityComponent() {
 
 void Test::testComponentManagerOperate() {
 	EntityManager entityManager(30);
-	ComponentManager componentManager(30,32);
+	ComponentManager componentManager(30);
 
 	struct Transform {
 		Vector2 position;

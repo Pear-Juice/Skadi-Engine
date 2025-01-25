@@ -6,7 +6,8 @@
 #include <queue>
 #include <valarray>
 
-#include "Types.hpp"
+#include "Definitions.hpp"
+#include "Source/Core/DataStorage/SparseSet.hpp"
 
 class EntityManager {
 	const uint32_t maxEntities = 0;
