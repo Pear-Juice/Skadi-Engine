@@ -15,14 +15,14 @@
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "../../Dependancies/stb_image.h"
+#include "../../Dependencies/stb_image.h"
 
 #define STB_IMAGE_WRITE_IMPLIMENTATION
 #include "Mesh.hpp"
 #include "Model.hpp"
-#include "../../Dependancies/stb_image_write.h"
+#include "../../Dependencies/stb_image_write.h"
 
-#include "../../Dependancies/tiny_gltf.h"
+#include "../../Dependencies/tiny_gltf.h"
 #include "Source/IdGen.hpp"
 
 void Loader::processAiNode(const aiScene *scene, aiNode *node, std::vector<Mesh> &meshes, std::unordered_map<uint32_t, Material> &materials) {

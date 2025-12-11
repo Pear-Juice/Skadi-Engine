@@ -6,7 +6,7 @@
 #define MATERIAL_HPP
 
 #include "Texture.hpp"
-#include "Dependancies/uuid.h"
+#include "Dependencies/uuid.h"
 
 struct Material {
     uuids::uuid id;

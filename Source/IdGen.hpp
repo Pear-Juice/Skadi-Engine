@@ -6,7 +6,7 @@
 #define IDGEN_HPP
 #include <algorithm>
 #include <mutex>
-#include "Dependancies/uuid.h"
+#include "Dependencies/uuid.h"
 
 
 class IDGen {

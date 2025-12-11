@@ -3,7 +3,7 @@
 
 
 #include <GLFW/glfw3.h>
-#include "../../Dependancies/ankerl/unordered_dense.h"
+#include "../../Dependencies/ankerl/unordered_dense.h"
 #include <Source/Core/Messaging/Event.hpp>
 
 #include "Source/Resources/Types.hpp"

@@ -1,5 +1,5 @@
 #include "ResourceManager.hpp"
-#include "Dependancies/json.hpp"
+#include "Dependencies/json.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <fstream>

@@ -11,7 +11,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include <vector>
-#include <Dependancies/uuid.h>
+#include <Dependencies/uuid.h>
 
 #include "Source/Input/Input.hpp"
 #include "Source/Resources/Texture.hpp"

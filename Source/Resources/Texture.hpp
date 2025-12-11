@@ -3,8 +3,8 @@
 
 #include <cstdint>
 #include <string>
-#include <Dependancies/stb_image.h>
-#include <Dependancies/uuid.h>
+#include <Dependencies/stb_image.h>
+#include <Dependencies/uuid.h>
 
 enum TextureType {
 

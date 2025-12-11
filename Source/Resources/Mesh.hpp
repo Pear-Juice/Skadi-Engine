@@ -6,7 +6,7 @@
 
 #include "Texture.hpp"
 #include "../Graphics/Vertex.hpp"
-#include "Dependancies/uuid.h"
+#include "Dependencies/uuid.h"
 
 struct Mesh {
 	uuids::uuid id;

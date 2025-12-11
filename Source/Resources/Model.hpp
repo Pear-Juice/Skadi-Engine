@@ -6,7 +6,7 @@
 
 #include "Material.hpp"
 #include "Mesh.hpp"
-#include "Dependancies/uuid.h"
+#include "Dependencies/uuid.h"
 
 struct Model {
 	uuids::uuid id;
