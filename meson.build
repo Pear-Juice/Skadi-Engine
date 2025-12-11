@@ -15,7 +15,7 @@ sources = ['Launch.cpp',
             'Test/Tests.cpp']
 
 #dep_spirv = meson.get_compiler('cpp').find_library('SPIRV')
-deps = [dependency('vulkan'), dependency('glfw3'), dependency('assimp'), dependency('unordered_dense')]
+deps = [dependency('vulkan'), dependency('glfw3'), dependency('assimp')]
 
 exe = executable('Skadi', sources, dependencies : deps,
   install : true)

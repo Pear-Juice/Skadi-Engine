@@ -45,7 +45,7 @@ App::App(std::string projectDirectory) {
 
 	initRend(rend);
 
-	std::string modelPath = "/home/blankitte/Documents/Engines/SkadiEngine/Models/Scene.glb";
+	std::string modelPath = "/home/vi/Documents/Game-Engines/Skadi-Engine/Models/Scene.glb";
 	Loader loader;
 	auto [meshes, materials] = loader.loadModels(modelPath);
 

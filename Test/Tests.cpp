@@ -499,8 +499,10 @@ void Test::testLambda() {
 		Lambda<std::function<void(int)>> lambda;
 	};
 
-	auto lamb = Lambda<std::function<void(int)>>([](int a){assert(a == -500);});
-	auto lamb2 = Lambda<std::function<void(int)>>([](int a){assert(a == 300);});
+	auto lamb = Lambda<std::function<void(int)>>([](int a){
+      assert(a == -500);
+    });
+
 	Container container{lamb};
 	container.lambda.call(-500);
 

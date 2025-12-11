@@ -96,8 +96,8 @@ void Rend::initVulkan() {
 	uboDescriptorSetLayout = resourceManager->createDescriptorSetLayout(1,0,0);
 	samplerDescriptorSetLayout = resourceManager->createDescriptorSetLayout(0,1,0);
 
-	VkShaderModule vertShader = resourceManager->createShaderModule(resourceManager->readFile("/home/blankitte/Documents/Engines/SkadiEngine/Shaders/vert.spv"));
-	VkShaderModule fragShader = resourceManager->createShaderModule(resourceManager->readFile("/home/blankitte/Documents/Engines/SkadiEngine/Shaders/frag.spv"));
+	VkShaderModule vertShader = resourceManager->createShaderModule(resourceManager->readFile("/home/vi/Documents/Game-Engines/Skadi-Engine/Shaders/vert.spv"));
+	VkShaderModule fragShader = resourceManager->createShaderModule(resourceManager->readFile("/home/vi/Documents/Game-Engines/Skadi-Engine/Shaders/frag.spv"));
 	VkPushConstantRange transformRange{};
 	transformRange.offset = 0;
 	transformRange.size = 64;
