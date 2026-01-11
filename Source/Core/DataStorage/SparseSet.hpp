@@ -73,7 +73,7 @@ public:
 	}
 
 	///set a preexisting element
-	bool assign(const uint32_t id, T value) {
+	bool set(const uint32_t id, T value) {
 		if (id >= maxElements || sparse[id] == nullElement) return false;
 
 		dense[sparse[id]] = DenseElement(id, value);

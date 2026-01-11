@@ -2,6 +2,8 @@
   pkgs.mkShell {
     # nativeBuildInputs is usually what you want -- tools you need to run
     nativeBuildInputs = with pkgs.buildPackages; [
+    
+    bullet
     pkgconf
     pkg-config
     meson
@@ -14,7 +16,6 @@
     glfw
     glm
     assimp
-    boost#unordered dense
     ninja
   ];
 }

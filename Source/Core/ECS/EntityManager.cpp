@@ -61,7 +61,7 @@ void EntityManager::setEntitySignature(Entity entity, Signature signature) {
 	if (entity > maxEntities) throw std::runtime_error("Entity out of range");
 	if (!activeEntities.contains(entity)) return;
 
-	activeEntities.assign(entity, signature);
+	activeEntities.set(entity, signature);
 }
 
 EntityManager::~EntityManager() {

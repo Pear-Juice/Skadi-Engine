@@ -114,12 +114,12 @@ void Test::testSparseSetAssign() {
 	set.add(4, "Boink");
 	set.add(2, "Bonk");
 	set.add(1, "Bork");
-	set.assign(2, "Boop");
+	set.set(2, "Boop");
 
 	set.add(2, "Boof");
 	set.add(7,"Worf");
 	set.add(3, "Woof");
-	set.assign(7, "Floof");
+	set.set(7, "Floof");
 
 	std::array<std::string, 5> denseVals = {"Boink","Boop","Bork","Floof","Woof"};
 	for (int i = 0; i < set.size(); i++) {
@@ -273,7 +273,7 @@ void Test::testECS() {
 				if (entity != entity2 && transform.position == transform2.position) {
 					auto health = componentManager.getComponents<Health>();
 
-					health->assign(entity2, {0});
+					health->set(entity2, {0});
 				}
 		});
 	});
@@ -357,7 +357,23 @@ void Test::testComponentManager() {
 	assert(bulletSet2->get(1).damage == 200);
 	assert(bulletSet2->get(2).damage == 300);
 
-	componentManager.unregisterComponents<Gun>();
+  std::cout << "TEST REMOVE COMPONENT" << '\n';
+  bulletSet->del(0);
+  bulletSet->del(1);
+  bulletSet->del(2);
+
+  assert(bulletSet->is_empty());
+
+  bulletSet2->clear();
+  assert(bulletSet2->is_empty());
+
+  // componentManager.addComponent<Bullet>(0, Bullet(100));
+  
+  // std::cout << "Test get component: " << componentManager.getComponent<Bullet>(0) << std::endl;
+
+  
+
+  componentManager.unregisterComponents<Gun>();
 	componentManager.unregisterComponents<Bullet>();
 }
 

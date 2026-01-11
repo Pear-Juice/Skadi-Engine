@@ -60,6 +60,18 @@ public:
 	}
 
 	template<typename T>
+	bool addComponent(Entity entity, T component) {
+		auto components = getComponents<T>();
+		return components->add(entity, component);
+	}
+
+	template<typename T>
+	T getComponent(Entity entity) {
+		auto components = getComponents<T>();
+		return components->get(entity);
+	}
+
+	template<typename T>
 	SparseSet<T>* getComponents() {
 		std::optional<ComponentType> type = getComponentType<T>();
 		if (!type) {
@@ -69,6 +81,12 @@ public:
 
 		char* data = componentData.get(type.value());
 		return reinterpret_cast<SparseSet<T>*>(data);
+	}
+
+	template<typename T>
+	bool removeComponent(Entity entity) {
+		auto components = getComponents<T>();
+    return components->del(entity);
 	}
 
 	template<typename T>

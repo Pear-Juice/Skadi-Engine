@@ -4,6 +4,7 @@
 #include "Graphics/Vertex.hpp"
 #include "Resources/Loader.hpp"
 #include "Input/Input.hpp"
+#include "Physics/Phys.hpp"
 
 #include <array>
 #include <cstdint>
@@ -44,6 +45,8 @@ App::App(std::string projectDirectory) {
 	Rend rend;
 
 	initRend(rend);
+
+  Phys phys;
 
 	std::string modelPath = "/home/vi/Documents/Game-Engines/Skadi-Engine/Models/Scene.glb";
 	Loader loader;
@@ -115,7 +118,7 @@ App::App(std::string projectDirectory) {
 
 		auto total_elapsed_millis = std::chrono::duration_cast<std::chrono::duration<float,std::milli>>(end-start).count();
 
-		//DO not but any code after this line
+		//DO not put any code after this line
 		if (total_elapsed_millis < 16) {
 			std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(16 - total_elapsed_millis)));
 		}
