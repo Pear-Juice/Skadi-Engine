@@ -27,11 +27,11 @@ Example:
 ```C++
 Scene scene(10);
 
-	SparseSet<Mesh>* meshComponents = scene.componentManager.getComponents<Mesh>();
-	for (auto& mesh : meshes) {
-		Entity box = scene.entityManager.allocEntity();
-		meshComponents->add(box, mesh);
-	}
+SparseSet<Mesh>* meshComponents = scene.componentManager.getComponents<Mesh>();
+for (auto& mesh : meshes) {
+	Entity box = scene.entityManager.allocEntity();
+	meshComponents->add(box, mesh);
+}
 ```
 
 **Camera Matrix Transformation**
